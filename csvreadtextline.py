@@ -2,8 +2,8 @@ import csv
 import numpy as np
 import tensorflow as tf
 
-IRIS_TEST = "iris_test.csv"
-IRIS_TRAINING = 'iris_training.csv'
+IRIS_TEST = "./woodata/iris_test.csv"
+IRIS_TRAINING = './woodata/iris_training.csv'
 
 COLUMNS = ['SepalLength','SepalWith','PetalLength','PetalWith','label']
 FIELD_DEFAULTS = [[0.0],[0.0],[0.0],[0.0],[0]]
@@ -19,6 +19,7 @@ def data_input_function( PATH, BatchSize ):
     Data = Data.map( __parse_line )
     Data = Data.shuffle( 1000 ).repeat( ).batch( BatchSize )
     return Data
+
 #Define input function
 # debuf:<class 'tensorflow.python.data.ops.readers.TextLineDataset'>
 
@@ -36,7 +37,4 @@ print("\r Train successfully\n")
 EvaResult = classifier.evaluate( input_fn = lambda: data_input_function( IRIS_TEST, 20 ), steps=1, hooks=None, checkpoint_path=None, name=None )
 
 print("\r\n EvaResult is:{0}\r\n".format(EvaResult))
-# init =  tf.global_variables_initializer()
-# sess = tf.Session()
-
-# sess.run(init)
+print("\r\n Accuracy is :{0}\r\n".format(EvaResult['accuracy']))
