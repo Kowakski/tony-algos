@@ -38,3 +38,20 @@ EvaResult = classifier.evaluate( input_fn = lambda: data_input_function( IRIS_TE
 
 print("\r\n EvaResult is:{0}\r\n".format(EvaResult))
 print("\r\n Accuracy is :{0}\r\n".format(EvaResult['accuracy']))
+
+def pred_input_fn( features, batchsize ):
+    Dataset = tf.data.Dataset.from_tensor_slices(features)
+    assert batchsize is not None, "Batch size is None"
+    return Dataset.batch( batchsize )  #is predict set, do not shuffle it
+
+#predict following set
+predict_x = {
+    'SepalLength': [5.1, 5.9, 6.9],
+    'SepalWidth': [3.3, 3.0, 3.1],
+    'PetalLength': [1.7, 4.2, 5.4],
+    'PetalWidth': [0.5, 1.5, 2.1],
+}
+
+print( "Prediction is {0}, {1}".format( type( Prediction ), Prediction ) )
+# print(train_logits)修改为sess.run(tf.Print(train_logits,[train_logits]))后
+Prediction = tf.Print( Prediction, [ Prediction ], "Prediction" )
