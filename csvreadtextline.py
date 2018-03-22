@@ -27,7 +27,12 @@ keys = ['SepalLength', 'SepalWith', 'PetalLength', 'PetalWith']
 
 FeaturesColumns = [ tf.feature_column.numeric_column( key = s, shape=(1,), default_value=None, dtype = tf.float32, normalizer_fn = None ) for s in keys ]
 
-classifier = tf.estimator.DNNClassifier( hidden_units = [10, 20], feature_columns = FeaturesColumns, model_dir = "./storage", n_classes=3, weight_column = None )
+#Define checkpoint config
+MyCheckPointConfig = tf.estimator.RunConfig( save_checkpoints_secs = 1,   #Save checkpoint every 1 s
+                                           keep_checkpoint_max = 100,     #Retain the 100 most recent checkpoints
+                                            )
+
+classifier = tf.estimator.DNNClassifier( hidden_units = [10, 20], feature_columns = FeaturesColumns, model_dir = "./storage", n_classes=3, weight_column = None, config = MyCheckPointConfig )
 
 classifier.train( input_fn = lambda: data_input_function( IRIS_TRAINING, 20 ), hooks = None, steps = 200, max_steps = None, saving_listeners =  None )
 
