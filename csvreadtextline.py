@@ -26,18 +26,12 @@ def data_input_function( PATH, BatchSize ):
 keys = ['SepalLength', 'SepalWith', 'PetalLength', 'PetalWith']
 
 FeaturesColumns = [ tf.feature_column.numeric_column( key = s, shape=(1,), default_value=None, dtype = tf.float32, normalizer_fn = None ) for s in keys ]
-print("\r\n Get features:{0}".format( FeaturesColumns ) )
 
 classifier = tf.estimator.DNNClassifier( hidden_units = [10, 20], feature_columns = FeaturesColumns, model_dir = "./storage", n_classes=3, weight_column = None )
-print("\r Create classifier successfully\n")
 
 classifier.train( input_fn = lambda: data_input_function( IRIS_TRAINING, 20 ), hooks = None, steps = 200, max_steps = None, saving_listeners =  None )
-print("\r Train successfully\n")
 
 EvaResult = classifier.evaluate( input_fn = lambda: data_input_function( IRIS_TEST, 20 ), steps=1, hooks=None, checkpoint_path=None, name=None )
-
-print("\r\n EvaResult is:{0}\r\n".format(EvaResult))
-print("\r\n Accuracy is :{0}\r\n".format(EvaResult['accuracy']))
 
 def pred_input_fn( features, batchsize ):
     Dataset = tf.data.Dataset.from_tensor_slices(features)
@@ -51,7 +45,6 @@ predict_x = {
     'PetalLength': [1.7, 4.2, 5.4],
     'PetalWidth': [0.5, 1.5, 2.1],
 }
-
+Prediction = classifier.predict( input_fn = lambda:pred_input_fn( predict_x, 200 ) )
 print( "Prediction is {0}, {1}".format( type( Prediction ), Prediction ) )
 # print(train_logits)修改为sess.run(tf.Print(train_logits,[train_logits]))后
-Prediction = tf.Print( Prediction, [ Prediction ], "Prediction" )
