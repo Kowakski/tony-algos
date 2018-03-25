@@ -9,9 +9,24 @@
 #   model), predict(predict the unkown sample)
 
 #Input Function
+COLUMNS = ['SepalLength', 'SepalWith', 'PetalLength', 'PetalWith', 'label']
+FIELD_DEFAULTS = [[0.0],[0.0],[0.0],[0.0],[0]]
+
+
+def __parse_line(line):
+    fields = tf.decode_csv( line, FIELD_DEFAULTS )
+    features = dict(zip(COLUMNS, fields))
+    labels = features.pop('label')
+    return features, label
+
+def data_input_function(PATH, BatchSize):
+    Data = tf.data.TextLineDataSet( PATH, compression_type = None, buffer_size = None ).skip(1)
+    Data = Data.map(__parse_line)
+    Data = Data.shuffle(1000).repeat().batch(BatchSize)
+    return Data
 
 #feature columns
-
+feature_columns = [tf.feature_columns.numeric_column(key=x, shape=(1,),default_value = None, dtype = tf.float32, normalizer_fn=None) for x in COLUMNS[:-1]]
 
 #model function
 '''
@@ -24,14 +39,16 @@
 '''
 def my_model_fun( features, labels, mode, params ):
     #input layer, convert feature dictionary to feature
-    net = tf.feature_columns.input_layer(features = features, params['feature_columns'] )
+    net = tf.feature_columns.input_layer(features = features, params['feature_columns'] )      #!!! important API
+    net = tf.Print(net, [net], 'In my_model_fun, input layer is')
 
     #hidden layers
     for units in params[hidden_layers]:
-        net = tf.layers.dense( net, units=units, activation = tf.nn.sigmoid )
+        net = tf.layers.dense( net, units=units, activation = tf.nn.sigmoid )       #!!! Important API
     #output layers
     logits = tf.layers.dense( net, params['n_classed'], activation = None ) #no activation function is different with hidden layers
     precated_class = tf.argmax(logits, 1)
+
     #now handler the result
     if mode == tf.estimator.ModeKeys.PREDICT:   #predict
         predictions = {
@@ -41,12 +58,19 @@ def my_model_fun( features, labels, mode, params ):
         }
         return tf.estimator.EstimatorSpec( mode, predictions = predictions )
 
+    loss = tf.losses.softmax_cross_entropy( labels = labels, logits = logits ) #!!! Important API
+
     #evaluate, return requires loss
     if mode == tf.estimator.ModeKeys.EVAL:
+        accuracy = tf.metrics.accuracy( labels = labels, predictions = precated_class, name = 'acc_op' )
+        metrics = {'accuracy':accuracy}
+        return tf.estimator.EstimatorSpec( loss = loss, eval_metric_ops = metrics )
 
     #training, returning requires loss and train_op
-
-
+    if mode == tf.estimator.ModeKeys.TRAIN:
+        optimizer = tf.train.AdagradOptimizer( learning_rate = 0.3 )
+        train_op = optimizer.minimize( loss, global_step = tf.train.get_global_step() )
+        return tf.estimator.EstimatorSpec( mode, loss = loss, train_op = train_op )
 
 
 classifier = tf.estimator.Estimator(
@@ -54,8 +78,10 @@ classifier = tf.estimator.Estimator(
     #this params functions will pass to model function
     params={
         'feature_columns':feature_columns,
-        'hidden_layers':[10,20]
+        'hidden_layers':[10,20],
         'n_classed': 3,
     },
 
 )
+classifier.train(input_fn = data_input_function, hooks=None, steps=200)
+evaluation = classifier.evaluate(input_fn=, steps=0, name='evaluation')
