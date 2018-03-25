@@ -8,25 +8,30 @@
 #   training(training the model get hyper parameters), evaluate(evaluate the perfermance of the
 #   model), predict(predict the unkown sample)
 
+import tensorflow as tf
+# from tensorflow.python import debug as tf_debug
+
 #Input Function
 COLUMNS = ['SepalLength', 'SepalWith', 'PetalLength', 'PetalWith', 'label']
 FIELD_DEFAULTS = [[0.0],[0.0],[0.0],[0.0],[0]]
 
+TrainDataPath = './woodata/iris_training.csv'
+EvaluDataPath = './woodata/iris_test.csv'
 
 def __parse_line(line):
     fields = tf.decode_csv( line, FIELD_DEFAULTS )
     features = dict(zip(COLUMNS, fields))
     labels = features.pop('label')
-    return features, label
+    return features, labels
 
 def data_input_function(PATH, BatchSize):
-    Data = tf.data.TextLineDataSet( PATH, compression_type = None, buffer_size = None ).skip(1)
+    Data = tf.data.TextLineDataset( PATH, compression_type = None, buffer_size = None ).skip(1)
     Data = Data.map(__parse_line)
     Data = Data.shuffle(1000).repeat().batch(BatchSize)
     return Data
 
 #feature columns
-feature_columns = [tf.feature_columns.numeric_column(key=x, shape=(1,),default_value = None, dtype = tf.float32, normalizer_fn=None) for x in COLUMNS[:-1]]
+feature_columns = [tf.feature_column.numeric_column(key=x, shape=(1,),default_value = None, dtype = tf.float32, normalizer_fn=None) for x in COLUMNS[:-1]]
 
 #model function
 '''
@@ -39,15 +44,19 @@ feature_columns = [tf.feature_columns.numeric_column(key=x, shape=(1,),default_v
 '''
 def my_model_fun( features, labels, mode, params ):
     #input layer, convert feature dictionary to feature
-    net = tf.feature_columns.input_layer(features = features, params['feature_columns'] )      #!!! important API
+    net = tf.feature_column.input_layer(features = features, feature_columns = params['feature_columns'] )      #!!! important API
     net = tf.Print(net, [net], 'In my_model_fun, input layer is')
+    # print("input feature is:{0}\r\n".format(features) )
+    # print("input label  is:{0}\r\n".format(labels) )
+    # print("input net is:{0}\r\n".format(net))
 
     #hidden layers
-    for units in params[hidden_layers]:
+    for units in params['hidden_layers']:
         net = tf.layers.dense( net, units=units, activation = tf.nn.sigmoid )       #!!! Important API
     #output layers
     logits = tf.layers.dense( net, params['n_classed'], activation = None ) #no activation function is different with hidden layers
     precated_class = tf.argmax(logits, 1)
+    # print("precated_class is:{0}\r\n".format(precated_class))
 
     #now handler the result
     if mode == tf.estimator.ModeKeys.PREDICT:   #predict
@@ -58,7 +67,9 @@ def my_model_fun( features, labels, mode, params ):
         }
         return tf.estimator.EstimatorSpec( mode, predictions = predictions )
 
-    loss = tf.losses.softmax_cross_entropy( labels = labels, logits = logits ) #!!! Important API
+    # print("labels is:{0}\r\n".format(labels))
+    # print("logits is:{0}\r\n".format(logits))
+    loss = tf.losses.softmax_cross_entropy( onehot_labels = labels, logits = precated_class ) #!!! Important API
 
     #evaluate, return requires loss
     if mode == tf.estimator.ModeKeys.EVAL:
@@ -72,7 +83,7 @@ def my_model_fun( features, labels, mode, params ):
         train_op = optimizer.minimize( loss, global_step = tf.train.get_global_step() )
         return tf.estimator.EstimatorSpec( mode, loss = loss, train_op = train_op )
 
-
+# sess = tf_debug.LocalCLIDebugWrapperSession(sess)
 classifier = tf.estimator.Estimator(
     model_fn = my_model_fun,
     #this params functions will pass to model function
@@ -83,5 +94,7 @@ classifier = tf.estimator.Estimator(
     },
 
 )
-classifier.train(input_fn = data_input_function, hooks=None, steps=200)
-evaluation = classifier.evaluate(input_fn=, steps=0, name='evaluation')
+classifier.train(input_fn = lambda: data_input_function(TrainDataPath, 200), hooks=None, steps=200)
+
+evaluation = classifier.evaluate(input_fn = lambda: data_input_function(EvaluDataPath, 200), steps=0, name='evaluation')
+print("evaluation is {0}\r\n".format( evaluation ))
