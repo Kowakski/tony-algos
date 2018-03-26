@@ -69,13 +69,13 @@ def my_model_fun( features, labels, mode, params ):
 
     # print("labels is:{0}\r\n".format(labels))
     # print("logits is:{0}\r\n".format(logits))
-    loss = tf.losses.softmax_cross_entropy( onehot_labels = labels, logits = precated_class ) #!!! Important API
+    loss = tf.losses.sparse_softmax_cross_entropy( labels = labels, logits = logits ) #!!! Important API
 
     #evaluate, return requires loss
     if mode == tf.estimator.ModeKeys.EVAL:
         accuracy = tf.metrics.accuracy( labels = labels, predictions = precated_class, name = 'acc_op' )
         metrics = {'accuracy':accuracy}
-        return tf.estimator.EstimatorSpec( loss = loss, eval_metric_ops = metrics )
+        return tf.estimator.EstimatorSpec( mode,  loss = loss, eval_metric_ops = metrics )
 
     #training, returning requires loss and train_op
     if mode == tf.estimator.ModeKeys.TRAIN:
@@ -96,5 +96,5 @@ classifier = tf.estimator.Estimator(
 )
 classifier.train(input_fn = lambda: data_input_function(TrainDataPath, 200), hooks=None, steps=200)
 
-evaluation = classifier.evaluate(input_fn = lambda: data_input_function(EvaluDataPath, 200), steps=0, name='evaluation')
+evaluation = classifier.evaluate(input_fn = lambda: data_input_function(EvaluDataPath, 200), steps=1, name='evaluation')
 print("evaluation is {0}\r\n".format( evaluation ))
