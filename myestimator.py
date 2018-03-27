@@ -45,10 +45,8 @@ feature_columns = [tf.feature_column.numeric_column(key=x, shape=(1,),default_va
 def my_model_fun( features, labels, mode, params ):
     #input layer, convert feature dictionary to feature
     net = tf.feature_column.input_layer(features = features, feature_columns = params['feature_columns'] )      #!!! important API
-    net = tf.Print(net, [net], 'In my_model_fun, input layer is')
+    net = tf.Print(net, [net], message ="Input net", first_n = 1, summarize = 10000)
     # print("input feature is:{0}\r\n".format(features) )
-    # print("input label  is:{0}\r\n".format(labels) )
-    # print("input net is:{0}\r\n".format(net))
 
     #hidden layers
     for units in params['hidden_layers']:
@@ -67,8 +65,7 @@ def my_model_fun( features, labels, mode, params ):
         }
         return tf.estimator.EstimatorSpec( mode, predictions = predictions )
 
-    # print("labels is:{0}\r\n".format(labels))
-    # print("logits is:{0}\r\n".format(logits))
+    labels = tf.Print(labels, [labels], message = "Cross entropy label is", first_n=1, summarize=10000)
     loss = tf.losses.sparse_softmax_cross_entropy( labels = labels, logits = logits ) #!!! Important API
 
     #evaluate, return requires loss

@@ -43,7 +43,7 @@ testop = g3.get_operation_by_name("exampleop")      #Get the operation through t
 
 with tf.Session() as sess:
     test =  sess.run(test)
-    print(test) 
+    print(test)
     test = tf.get_default_graph().get_tensor_by_name("exampleop:0")
     print (test)
 
