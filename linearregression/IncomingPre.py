@@ -4,8 +4,8 @@ import tensorflow.contrib.eager as tfe
 
 # tfe.enable_eager_execution()
 
-TrainDataPath = "/home/sln/share/now1/woodata/census_data/adult.data"
-TestDataPath = "/home/sln/share/now1/woodata/census_data/adult.test"
+TrainDataPath = "D:\Mydata/census_data/adult.data"
+TestDataPath = "D:\Mydata/census_data/adult.test"
 
 mark = ["age", "workclass", "fnlwgt", "education", "education_num", "marital_status", "occupation", "relationship", "race", "gender", "capital_gain", "capital_loss", "hours_per_week", "native_country", "income"]
 FIELD_DEFAULTS = [ [0], [""], [0], [""], [0], [""], [""], [""], [""], [""], [0], [0], [0], [""], [""]]
@@ -102,6 +102,7 @@ def main(unused_argv):
     estimator = tf.estimator.LinearClassifier( feature_columns = create_feature_columns(), n_classes = 2 )
     Train = estimator.train( input_fn = lambda:data_input_fun( TrainDataPath, 10 ), steps = 5 )
     evaluation = estimator.evaluate( input_fn = lambda:data_input_fun( TestDataPath, 10 ), steps = 1 )
+    tf.logging.log( tf.logging.INFO, evaluation )
 
 if __name__ == "__main__":
     #evaluate
@@ -109,4 +110,5 @@ if __name__ == "__main__":
     # iterator = tfe.Iterator(data)
     # for  one_item in iterator:
     #     print( one_item )
+    tf.logging.set_verbosity(tf.logging.INFO)
     tf.app.run()
