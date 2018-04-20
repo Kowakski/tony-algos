@@ -17,7 +17,7 @@ np.set_printoptions(threshold=np.nan)
 #define estimator function
 def mod_fn( self, features, labels, mode, params ):
     #convolution layer
-    net = tf.layers.Conv2D.conv2d(inputs = features, filters = , kernel_size = , stride = (1,1), padding = 'valid'):
+    net = tf.layers.conv2d(inputs = features, filters = 32, kernel_size = ( 2,2 ) , stride = (1,1), padding = 'valid', data_format='channels_last', activation=tf.nn.relu, use_bias=True)
 
     #pooling layer
     net = tf.layers.AveragePooling2D.average_pooling2d( inputs = , pool_size = , strides = , padding='valid', data_format='channels_last', name=None )
