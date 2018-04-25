@@ -22,17 +22,21 @@ def mod_fn( features, labels, mode ):
     # tf.logging.log( tf.logging.INFO,  inputs )
 
     #convolution layer
-    conv1 = tf.layers.conv2d( inputs = inputs, filters = 32, kernel_size = [3,3], strides = (1,1), padding = 'valid')
+    conv1 = tf.layers.conv2d( inputs = inputs, filters = 32,
+                              kernel_size = [3,3], strides = (1,1),
+                              padding = 'valid', activation=tf.nn.relu, name = 'conv1')
     print("conv1 is:{0}".format(conv1))
     # tf.logging.log( tf.logging.INFO, conv1 )
     #pooling layer
-    pool1 = tf.layers.average_pooling2d( inputs = conv1, pool_size = ( 2, 2 ), strides = [1,1], padding='valid', data_format='channels_last', name=None )
+    pool1 = tf.layers.average_pooling2d( inputs = conv1, pool_size = ( 2, 2 ), strides = [1,1], padding='valid', data_format='channels_last', name = 'pool1' )
     print("pool1 is:{0}".format(pool1))
     # tf.logging.log( tf.logging.INFO, pool1 )
 
 
     #convolution layer
-    conv2 = tf.layers.conv2d( inputs = pool1, filters = 64, kernel_size = [2,2], strides = [1,1], padding = 'valid' )
+    conv2 = tf.layers.conv2d( inputs = pool1, filters = 64,
+                               kernel_size = [2,2], strides = [1,1],
+                               padding = 'valid', activation=tf.nn.relu )
     print("conv2 is:{0}".format(conv2))
     #pooling layer
     pool2 = tf.layers.average_pooling2d( inputs = conv2, pool_size = ( 2, 2 ), strides = [1,1], padding = 'valid' )
@@ -76,12 +80,17 @@ def data_input_fn( data, labels ):
     tf.logging.log(tf.logging.INFO, result)
     return result
 
+tensors_to_log = { "con1": "conv1/Relu" }     #Get the tensor name form tensorboard graph
+logging_hook = tf.train.LoggingTensorHook(
+  tensors=tensors_to_log, every_n_iter=1)
+
+
 #define main function
 def main(unused_args):
     data = tf.contrib.learn.datasets.mnist.load_mnist()
-    TrainImages = {'x':data.train.images}
+    TrainImages = {'x':data.train.images[:50]}
     # TrainLabels = data.train.labels
-    TrainLabels =  np.asarray(data.train.labels, dtype=np.int32)
+    TrainLabels =  np.asarray(data.train.labels[:50], dtype=np.int32)
 
     EvaluImages = {'x':data.validation.images}
     EvaluLabels = np.asarray(data.validation.labels, dtype=np.int32)
@@ -98,19 +107,20 @@ def main(unused_args):
     train_data_input_fn = tf.estimator.inputs.numpy_input_fn(
         x = TrainImages,
         y = TrainLabels,
-        batch_size = 100,
+        batch_size = 10,
         shuffle = True )
 
     # train = estimator.train( input_fn = lambda:data_input_fn( data = TrainImages, labels = TrainLabels ), steps = 20 )
     train = estimator.train(
      input_fn = train_data_input_fn,
-     steps = 20 )
+     # hooks = [logging_hook],
+     hooks = None,
+     steps = 6000 )
 
 #Evaluation
     eva_data_input_fn =  tf.estimator.inputs.numpy_input_fn(
         x = EvaluImages,
         y = EvaluLabels,
-        batch_size = 5000,
         shuffle = True )
     evalutaion = estimator.evaluate( input_fn = eva_data_input_fn, steps = 1 )
     print("Evaluation is:{0}".format(evalutaion))
