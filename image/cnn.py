@@ -22,30 +22,33 @@ def mod_fn( features, labels, mode ):
     # tf.logging.log( tf.logging.INFO,  inputs )
 
     #convolution layer
-    conv1 = tf.layers.conv2d( inputs = inputs, filters = 32,
-                              kernel_size = [3,3], strides = (1,1),
-                              padding = 'valid', activation=tf.nn.relu, name = 'conv1')
+    conv1 = tf.layers.conv2d( inputs = inputs,
+                              filters = 32,
+                              kernel_size = [5,5],
+                              padding = 'valid',
+                              activation=tf.nn.relu, name = 'conv1')
     print("conv1 is:{0}".format(conv1))
     # tf.logging.log( tf.logging.INFO, conv1 )
     #pooling layer
-    pool1 = tf.layers.average_pooling2d( inputs = conv1, pool_size = ( 2, 2 ), strides = [1,1], padding='valid', data_format='channels_last', name = 'pool1' )
+    pool1 = tf.layers.average_pooling2d( inputs = conv1, pool_size = ( 2, 2 ), strides = [2,2], padding='valid', data_format='channels_last', name = 'pool1' )
     print("pool1 is:{0}".format(pool1))
     # tf.logging.log( tf.logging.INFO, pool1 )
 
 
     #convolution layer
-    conv2 = tf.layers.conv2d( inputs = pool1, filters = 64,
-                               kernel_size = [2,2], strides = [1,1],
-                               padding = 'valid', activation=tf.nn.relu )
+    conv2 = tf.layers.conv2d(  inputs = pool1,
+                               filters = 64,
+                               kernel_size = [5,5],
+                               padding = 'valid',
+                               activation=tf.nn.relu )
     print("conv2 is:{0}".format(conv2))
     #pooling layer
-    pool2 = tf.layers.average_pooling2d( inputs = conv2, pool_size = ( 2, 2 ), strides = [1,1], padding = 'valid' )
+    pool2 = tf.layers.average_pooling2d( inputs = conv2, pool_size = ( 2, 2 ), strides = 2, padding = 'valid' )
     print("pool2 is:{0}".format(pool2))
-
     #full connected layer
-    FullConnet = tf.reshape( pool2, [-1, 23*23*64] )  #7width*7height*64channel
+    FullConnet = tf.reshape( pool2, [-1, 4*4*64] )  #7width*7height*64channel
 
-    dense = tf.layers.dense( inputs = FullConnet, units = 7*7*64, activation = tf.nn.sigmoid )
+    dense = tf.layers.dense( inputs = FullConnet, units = 4*4*64, activation = tf.nn.sigmoid )
 
     #softmax layer
     logits = tf.layers.dense( inputs = dense, units = 10 )
@@ -62,15 +65,13 @@ def mod_fn( features, labels, mode ):
         return tf.estimator.EstimatorSpec( mode, predictions = predict )
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.train.AdagradOptimizer( learning_rate = 0.3 )
+        optimizer = tf.train.AdagradOptimizer( learning_rate = 0.001 )
         train_op = optimizer.minimize(
             loss = loss,
             global_step = tf.train.get_global_step() )
         return tf.estimator.EstimatorSpec( mode, loss = loss, train_op = train_op )
 
     if mode == tf.estimator.ModeKeys.EVAL:
-        print("sln label is {0}".format(labels))
-        print("sln predict is {0}".format(predict))
         accuracy = tf.metrics.accuracy( labels = labels, predictions = predict )
         metrics = {'accuracy':accuracy}
         return tf.estimator.EstimatorSpec( mode, loss = loss, eval_metric_ops = metrics )
@@ -80,17 +81,18 @@ def data_input_fn( data, labels ):
     tf.logging.log(tf.logging.INFO, result)
     return result
 
-tensors_to_log = { "con1": "conv1/Relu" }     #Get the tensor name form tensorboard graph
+# "con1": "conv1/Relu"
+tensors_to_log = { "ada":"Adagrad/value"}     #Get the tensor name form tensorboard graph
 logging_hook = tf.train.LoggingTensorHook(
-  tensors=tensors_to_log, every_n_iter=1)
+  tensors=tensors_to_log, every_n_iter=50)
 
 
 #define main function
 def main(unused_args):
     data = tf.contrib.learn.datasets.mnist.load_mnist()
-    TrainImages = {'x':data.train.images[:50]}
+    TrainImages = {'x':data.train.images}
     # TrainLabels = data.train.labels
-    TrainLabels =  np.asarray(data.train.labels[:50], dtype=np.int32)
+    TrainLabels =  np.asarray(data.train.labels, dtype=np.int32)
 
     EvaluImages = {'x':data.validation.images}
     EvaluLabels = np.asarray(data.validation.labels, dtype=np.int32)
@@ -107,7 +109,8 @@ def main(unused_args):
     train_data_input_fn = tf.estimator.inputs.numpy_input_fn(
         x = TrainImages,
         y = TrainLabels,
-        batch_size = 10,
+        batch_size = 100,
+        num_epochs=None,
         shuffle = True )
 
     # train = estimator.train( input_fn = lambda:data_input_fn( data = TrainImages, labels = TrainLabels ), steps = 20 )
@@ -115,7 +118,7 @@ def main(unused_args):
      input_fn = train_data_input_fn,
      # hooks = [logging_hook],
      hooks = None,
-     steps = 6000 )
+     steps = 2000 )
 
 #Evaluation
     eva_data_input_fn =  tf.estimator.inputs.numpy_input_fn(
@@ -124,8 +127,6 @@ def main(unused_args):
         shuffle = True )
     evalutaion = estimator.evaluate( input_fn = eva_data_input_fn, steps = 1 )
     print("Evaluation is:{0}".format(evalutaion))
-
-
 
 if __name__ == "__main__":
     tf.app.run()
