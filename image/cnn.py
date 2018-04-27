@@ -25,12 +25,12 @@ def mod_fn( features, labels, mode ):
     conv1 = tf.layers.conv2d( inputs = inputs,
                               filters = 32,
                               kernel_size = [5,5],
-                              padding = 'valid',
+                              padding = 'same',
                               activation=tf.nn.relu, name = 'conv1')
     print("conv1 is:{0}".format(conv1))
     # tf.logging.log( tf.logging.INFO, conv1 )
     #pooling layer
-    pool1 = tf.layers.average_pooling2d( inputs = conv1, pool_size = ( 2, 2 ), strides = [2,2], padding='valid', data_format='channels_last', name = 'pool1' )
+    pool1 = tf.layers.average_pooling2d( inputs = conv1, pool_size = ( 2, 2 ), strides = [2,2], data_format='channels_last', name = 'pool1' )
     print("pool1 is:{0}".format(pool1))
     # tf.logging.log( tf.logging.INFO, pool1 )
 
@@ -39,16 +39,17 @@ def mod_fn( features, labels, mode ):
     conv2 = tf.layers.conv2d(  inputs = pool1,
                                filters = 64,
                                kernel_size = [5,5],
-                               padding = 'valid',
+                               padding = 'same',
                                activation=tf.nn.relu )
     print("conv2 is:{0}".format(conv2))
     #pooling layer
-    pool2 = tf.layers.average_pooling2d( inputs = conv2, pool_size = ( 2, 2 ), strides = 2, padding = 'valid' )
+    pool2 = tf.layers.average_pooling2d( inputs = conv2, pool_size = ( 2, 2 ), strides = 2 )
+
     print("pool2 is:{0}".format(pool2))
     #full connected layer
-    FullConnet = tf.reshape( pool2, [-1, 4*4*64] )  #7width*7height*64channel
+    FullConnet = tf.reshape( pool2, [-1, 7*7*64] )  #7width*7height*64channel
 
-    dense = tf.layers.dense( inputs = FullConnet, units = 4*4*64, activation = tf.nn.sigmoid )
+    dense = tf.layers.dense( inputs = FullConnet, units = 7*7*64, activation = tf.nn.relu )
 
     #softmax layer
     logits = tf.layers.dense( inputs = dense, units = 10 )
@@ -59,7 +60,7 @@ def mod_fn( features, labels, mode ):
     print("sln predict is {0}".format( predict ))
 
     #losses
-    loss = tf.losses.sparse_softmax_cross_entropy(labels =  labels, logits = logits, weights = 1.0)
+    loss = tf.losses.sparse_softmax_cross_entropy(labels =  labels, logits = logits)
 
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec( mode, predictions = predict )
