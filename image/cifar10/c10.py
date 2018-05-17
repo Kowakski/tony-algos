@@ -40,9 +40,13 @@ for i in Pool2.shape[1:]:
 
 FullayerInput = tf.reshape(Pool2, [-1,nod])
 
-WL = tf.Variable( initial_value = tf.truncated_normal([nod,10], stddev = 0.001 ), dtype = tf.float32 )  #weights of logic layer
+WL1 = tf.Variable( initial_value = tf.truncated_normal([nod,nod*2], stddev = 0.001 ), dtype = tf.float32 )  #weights of logic layer
+BL1 = tf.Variable( initial_value = tf.constant(0.1, shape = [1, nod*2]), dtype = tf.float32 )
+logits1 = tf.nn.relu( tf.matmul(FullayerInput, WL1 ) + BL1 )
+
+WL = tf.Variable( initial_value = tf.truncated_normal([nod*2,10], stddev = 0.001 ), dtype = tf.float32 )  #weights of logic layer
 BL = tf.Variable( initial_value = tf.constant(0.1, shape = [1, 10]), dtype = tf.float32 )
-logits = tf.nn.relu( tf.matmul(FullayerInput, WL ) + BL )
+logits = tf.nn.relu( tf.matmul(logits1, WL ) + BL )
 
 softmax = tf.nn.softmax( logits )
 EvalLabel =  tf.argmax( softmax, 1 )
