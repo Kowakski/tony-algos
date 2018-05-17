@@ -9,7 +9,7 @@ from functools import reduce
 Datadir = 'D:\\tmp\\cifar10_data\\cifar-10-batches-bin'
 
 BatchSize = 256
-TrainSteps = 15000
+TrainSteps = 10000
 
 images, labels = input10.inputs( False, 'D:\\tmp\\cifar10_data\\cifar-10-batches-bin', BatchSize )
 
@@ -50,9 +50,12 @@ evaluation = tf.reduce_mean( tf.cast( tf.equal( tf.argmax(y_label,1), EvalLabel 
 
 loss = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits( labels = y_label, logits = logits, name = 'loss' ))
 tf.summary.scalar('loss',loss)
-
-# optimizer = tf.train.GradientDescentOptimizer(1e-4)
-optimizer = tf.train.AdamOptimizer(1e-4)
+global_steps = tf.train.get_or_create_global_step()
+step = tf.assign_add(global_steps, 1)
+learning_rate = tf.train.exponential_decay(0.003,
+                                   global_steps,
+                                   decay_steps=200,decay_rate=0.98)
+optimizer = tf.train.AdamOptimizer(learning_rate)
 train = optimizer.minimize( loss )
 
 sess = tf.Session( )
@@ -65,7 +68,7 @@ tf.train.start_queue_runners(sess = sess)
 for i in range(TrainSteps):
     trainx, trainy = sess.run( [ images,labels ] )
     trainy_b = np.eye(10)[trainy]
-    sess.run(train, feed_dict={ x_input:trainx, y_label:trainy_b })
+    sess.run([step,train], feed_dict={ x_input:trainx, y_label:trainy_b })
 
     if(i%200 == 0):
         evalx, evaly =  sess.run( [ images, labels ] )
