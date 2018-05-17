@@ -9,14 +9,14 @@ from functools import reduce
 Datadir = 'D:\\tmp\\cifar10_data\\cifar-10-batches-bin'
 
 BatchSize = 256
-TrainSteps = 1500
+TrainSteps = 15000
 
 images, labels = input10.inputs( False, 'D:\\tmp\\cifar10_data\\cifar-10-batches-bin', BatchSize )
 
 x_input = tf.placeholder( tf.float32, shape=[None, 24, 24, 3] )
 y_label = tf.placeholder( tf.float32, shape=[None,10] )
 
-W1 = tf.Variable( initial_value = tf.truncated_normal([5,5,3,64], stddev = 0.1 ), dtype= tf.float32 )
+W1 = tf.Variable( initial_value = tf.truncated_normal([5,5,3,64], stddev = 0.001 ), dtype= tf.float32 )
 B1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 )
 tf.summary.histogram("weights1",W1)
 tf.summary.histogram("bias1",B1)
@@ -26,7 +26,7 @@ x_image = tf.reshape(x_input, [-1,24,24,3])
 Net1 = tf.nn.relu( tf.nn.conv2d( x_image, W1, strides=[1,2,2,1], padding='SAME' ) + B1 )
 Pool1 = tf.nn.max_pool( Net1, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
-W2 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.1 ), dtype= tf.float32 )
+W2 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32 )
 B2 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 )
 tf.summary.histogram("weights2",W1)
 tf.summary.histogram("bias2",B1)
@@ -40,7 +40,7 @@ for i in Pool2.shape[1:]:
 
 FullayerInput = tf.reshape(Pool2, [-1,nod])
 
-WL = tf.Variable( initial_value = tf.truncated_normal([nod,10], stddev = 0.1 ), dtype = tf.float32 )  #weights of logic layer
+WL = tf.Variable( initial_value = tf.truncated_normal([nod,10], stddev = 0.001 ), dtype = tf.float32 )  #weights of logic layer
 BL = tf.Variable( initial_value = tf.constant(0.1, shape = [1, 10]), dtype = tf.float32 )
 logits = tf.nn.relu( tf.matmul(FullayerInput, WL ) + BL )
 
