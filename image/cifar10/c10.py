@@ -36,8 +36,8 @@ images, labels = input10.inputs( False, 'D:\\tmp\\cifar10_data\\cifar-10-batches
 x_input = tf.placeholder( tf.float32, shape=[None, 24, 24, 3] )
 y_label = tf.placeholder( tf.float32, shape=[None,10] )
 
-W1 = tf.Variable( initial_value = tf.truncated_normal([5,5,3,64], stddev = 0.001 ), dtype= tf.float32 )
-B1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 )
+W1 = tf.Variable( initial_value = tf.truncated_normal([5,5,3,64], stddev = 0.001 ), dtype= tf.float32, name = 'W1' )
+B1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 , name = 'B1')
 tf.summary.histogram("weights1",W1)
 tf.summary.histogram("bias1",B1)
 
@@ -46,8 +46,8 @@ x_image = tf.reshape(x_input, [-1,24,24,3])
 Net1 = tf.nn.relu( tf.nn.conv2d( x_image, W1, strides=[1,2,2,1], padding='SAME' ) + B1 )
 Pool1 = tf.nn.max_pool( Net1, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
-W2 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32 )
-B2 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 )
+W2 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
+B2 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
 tf.summary.histogram("weights2",W1)
 tf.summary.histogram("bias2",B1)
 
@@ -60,12 +60,12 @@ for i in Pool2.shape[1:]:
 
 FullayerInput = tf.reshape(Pool2, [-1,nod])
 
-WL1 = tf.Variable( initial_value = tf.truncated_normal([nod,nod*2], stddev = 0.001 ), dtype = tf.float32 )  #weights of logic layer
-BL1 = tf.Variable( initial_value = tf.constant(0.1, shape = [1, nod*2]), dtype = tf.float32 )
+WL1 = tf.Variable( initial_value = tf.truncated_normal([nod,nod*2], stddev = 0.001 ), dtype = tf.float32, name = 'WL1' )  #weights of logic layer
+BL1 = tf.Variable( initial_value = tf.constant(0.1, shape = [1, nod*2]), dtype = tf.float32, name = 'BL1' )
 logits1 = tf.nn.relu( tf.matmul(FullayerInput, WL1 ) + BL1 )
 
-WL = tf.Variable( initial_value = tf.truncated_normal([nod*2,10], stddev = 0.001 ), dtype = tf.float32 )  #weights of logic layer
-BL = tf.Variable( initial_value = tf.constant(0.1, shape = [1, 10]), dtype = tf.float32 )
+WL = tf.Variable( initial_value = tf.truncated_normal([nod*2,10], stddev = 0.001 ), dtype = tf.float32, name = 'WL' )  #weights of logic layer
+BL = tf.Variable( initial_value = tf.constant(0.1, shape = [1, 10]), dtype = tf.float32, name = 'BL' )
 logits = tf.nn.relu( tf.matmul(logits1, WL ) + BL )
 
 softmax = tf.nn.softmax( logits )
@@ -86,7 +86,7 @@ sess = tf.Session( )
 merged = tf.summary.merge_all( )
 writer = tf.summary.FileWriter( "./logs",sess.graph )
 sess.run( tf.global_variables_initializer( ) )
-
+saver = tf.train.Saver()
 tf.train.start_queue_runners(sess = sess)
 
 for i in range(TrainSteps):
@@ -102,3 +102,11 @@ for i in range(TrainSteps):
     if(i%10 == 0):
         result = sess.run(merged, feed_dict = { x_input:trainx, y_label:trainy_b })
         writer.add_summary(result, i)
+saver.save(sess, "my_net/train_result.ckpt")
+print("save train result")
+
+saver.restore(sess, "my_net/train_result.ckpt")
+W1 = sess.run(W1)
+print("weight1 is:",W1)
+B1 = sess.run(B1)
+print("biases1 is:", B1)
