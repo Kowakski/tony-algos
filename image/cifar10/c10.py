@@ -37,6 +37,28 @@ images_eval, labels_eval = input10.inputs( True, data_dir = Datadir, batch_size 
 x_input = tf.placeholder( tf.float32, shape=[None, 24, 24, 3] )
 y_label = tf.placeholder( tf.float32, shape=[None,10] )
 
+'''
+x_image = tf.reshape(x_input, [-1,24,24,3])
+
+Net1 = tf.layers.conv2d( x_image, filters = 64, kernel_size = [5,5], strides = (1,1), padding = 'same', name = 'net1')
+Pool1 = tf.layers.max_pooling2d(Net1, pool_size=[3,3], strides=[2,2], padding='same', name='pool1')
+
+Net2 = tf.layers.conv2d( Pool1, filters = 64, kernel_size = [3,3], strides = (1,1), padding = 'same', name = 'net2')
+Pool2 = tf.layers.max_pooling2d(Net2, pool_size=[3,3], strides=[2,2], padding='same', name='pool2')
+
+Net3 = tf.layers.conv2d( Pool1, filters = 64, kernel_size = [3,3], strides = (1,1), padding = 'same', name = 'net3')
+Pool3 = tf.layers.max_pooling2d(Net2, pool_size=[3,3], strides=[2,2], padding='same', name='pool3')
+
+nod = 1
+for i in Pool3.shape[1:]:
+    nod = nod * int(i)
+
+FullayerInput = tf.reshape(Pool3, [-1,nod])
+
+logits = tf.contrib.layers.fully_connected(FullayerInput, 10)
+'''
+
+#layer1
 W1 = tf.Variable( initial_value = tf.truncated_normal([5,5,3,64], stddev = 0.001 ), dtype= tf.float32, name = 'W1' )
 B1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 , name = 'B1')
 tf.summary.histogram("weights1",W1)
@@ -44,22 +66,30 @@ tf.summary.histogram("bias1",B1)
 
 x_image = tf.reshape(x_input, [-1,24,24,3])
 
-Net1 = tf.nn.relu( tf.nn.conv2d( x_image, W1, strides=[1,2,2,1], padding='SAME' ) + B1 )
+Net1 = tf.nn.relu( tf.nn.conv2d( x_image, W1, strides=[1,1,1,1], padding='SAME' ) + B1 )
 Pool1 = tf.nn.max_pool( Net1, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
+#layer2
 W2 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
 B2 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
 tf.summary.histogram("weights2",W1)
 tf.summary.histogram("bias2",B1)
 
-Net2 = tf.nn.relu( tf.nn.conv2d( Pool1, W2, strides=[1,2,2,1], padding='SAME' ) + B2 )
+Net2 = tf.nn.relu( tf.nn.conv2d( Pool1, W2, strides=[1,1,1,1], padding='SAME' ) + B2 )
 Pool2 = tf.nn.max_pool( Net2, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
+#layer3
+W3 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W3' )
+B3 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B3' )
+Net3 = tf.nn.relu( tf.nn.conv2d( Pool2, W3, strides=[1,1,1,1], padding='SAME' ) + B3 )
+Pool3 = tf.nn.max_pool( Net2, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
+
+print( "Pool2 is: ", Pool3 )
 nod = 1
-for i in Pool2.shape[1:]:
+for i in Pool3.shape[1:]:
     nod = nod * int(i)
 
-FullayerInput = tf.reshape(Pool2, [-1,nod])
+FullayerInput = tf.reshape(Pool3, [-1,nod])
 
 WL = tf.Variable( initial_value = tf.truncated_normal([nod,10], stddev = 0.001 ), dtype = tf.float32, name = 'WL' )  #weights of logic layer
 BL = tf.Variable( initial_value = tf.constant(0.1, shape = [1, 10]), dtype = tf.float32, name = 'BL' )
