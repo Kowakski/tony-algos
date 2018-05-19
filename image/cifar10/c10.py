@@ -59,14 +59,17 @@ logits = tf.contrib.layers.fully_connected(FullayerInput, 10)
 '''
 
 #layer1
-W1 = tf.Variable( initial_value = tf.truncated_normal([5,5,3,64], stddev = 0.001 ), dtype= tf.float32, name = 'W1' )
-B1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 , name = 'B1')
-tf.summary.histogram("weights1",W1)
-tf.summary.histogram("bias1",B1)
-
 x_image = tf.reshape(x_input, [-1,24,24,3])
 
-Net1 = tf.nn.relu( tf.nn.conv2d( x_image, W1, strides=[1,1,1,1], padding='SAME' ) + B1 )
+W1 = tf.Variable( initial_value = tf.truncated_normal([5,1,3,64], stddev = 0.001 ), dtype= tf.float32, name = 'W1' )
+B1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 , name = 'B1')
+W1r = tf.Variable( initial_value = tf.truncated_normal([1,5,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W1' )
+B1r = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 , name = 'B1')
+
+Net1r = tf.nn.relu( tf.nn.conv2d( x_image, W1, strides=[1,1,1,1], padding='SAME' ) + B1 )
+Pool1r = tf.nn.max_pool( Net1r, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
+
+Net1 = tf.nn.relu( tf.nn.conv2d( Pool1r, W1r, strides=[1,1,1,1], padding='SAME' ) + B1r )
 Pool1 = tf.nn.max_pool( Net1, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
 #layer2
