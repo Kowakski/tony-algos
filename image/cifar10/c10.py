@@ -29,7 +29,7 @@ from functools import reduce
 Datadir = '/tmp/cifar10_data/cifar-10-batches-bin'
 
 BatchSize = 256
-TrainSteps = 10000
+TrainSteps = 18000
 
 images, labels = input10.inputs( False, data_dir = Datadir, batch_size = BatchSize )
 images_eval, labels_eval = input10.inputs( True, data_dir = Datadir, batch_size = BatchSize )
@@ -72,17 +72,26 @@ Pool1r = tf.nn.max_pool( Net1r, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 
 Net1 = tf.nn.relu( tf.nn.conv2d( Pool1r, W1r, strides=[1,1,1,1], padding='SAME' ) + B1r )
 Pool1 = tf.nn.max_pool( Net1, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
-#layer2
-W2 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
-B2 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
-tf.summary.histogram("weights2",W1)
-tf.summary.histogram("bias2",B1)
+#layer2, 多通道卷积
+W2_1 = tf.Variable( initial_value = tf.truncated_normal([1,1,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
+B2_1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
+Net2_1 = tf.nn.relu( tf.nn.conv2d( Pool1, W2_1, strides=[1,1,1,1], padding='SAME' ) + B2_1 )
+# Pool2_1 = tf.nn.max_pool( Net2, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
-Net2 = tf.nn.relu( tf.nn.conv2d( Pool1, W2, strides=[1,1,1,1], padding='SAME' ) + B2 )
+W2_3 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
+B2_3 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
+Net2_3 = tf.nn.relu( tf.nn.conv2d( Pool1, W2_3, strides=[1,1,1,1], padding='SAME' ) + B2_3 )
+
+W2_5 = tf.Variable( initial_value = tf.truncated_normal([5,5,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
+B2_5 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
+Net2_5 = tf.nn.relu( tf.nn.conv2d( Pool1, W2_5, strides=[1,1,1,1], padding='SAME' ) + B2_5 )
+
+Net2 = tf.concat([Net2_1, Net2_3, Net2_5],3)
+
 Pool2 = tf.nn.max_pool( Net2, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
 #layer3
-W3 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W3' )
+W3 = tf.Variable( initial_value = tf.truncated_normal([3,3,192,64], stddev = 0.001 ), dtype= tf.float32, name = 'W3' )
 B3 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B3' )
 Net3 = tf.nn.relu( tf.nn.conv2d( Pool2, W3, strides=[1,1,1,1], padding='SAME' ) + B3 )
 Pool3 = tf.nn.max_pool( Net2, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
