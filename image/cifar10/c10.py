@@ -25,6 +25,7 @@ import numpy as np
 import cifar10.cifar10_input as input10
 import tensorflow as tf
 from functools import reduce
+from tensorflow.contrib.layers.python.layers import batch_norm
 
 Datadir = '/tmp/cifar10_data/cifar-10-batches-bin'
 
@@ -36,6 +37,7 @@ images_eval, labels_eval = input10.inputs( True, data_dir = Datadir, batch_size 
 
 x_input = tf.placeholder( tf.float32, shape=[None, 24, 24, 3] )
 y_label = tf.placeholder( tf.float32, shape=[None,10] )
+trainflag = tf.placeholder(tf.bool)
 
 '''
 x_image = tf.reshape(x_input, [-1,24,24,3])
@@ -58,6 +60,12 @@ FullayerInput = tf.reshape(Pool3, [-1,nod])
 logits = tf.contrib.layers.fully_connected(FullayerInput, 10)
 '''
 
+def batch_norm_layer(value,train = None, name = 'batch_norm'):
+  if train is not None:
+      return batch_norm(value, decay = 0.9,updates_collections=None, is_training = True)
+  else:
+      return batch_norm(value, decay = 0.9,updates_collections=None, is_training = False)
+
 #layer1
 x_image = tf.reshape(x_input, [-1,24,24,3])
 
@@ -66,25 +74,25 @@ B1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.floa
 W1r = tf.Variable( initial_value = tf.truncated_normal([1,5,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W1' )
 B1r = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 , name = 'B1')
 
-Net1r = tf.nn.relu( tf.nn.conv2d( x_image, W1, strides=[1,1,1,1], padding='SAME' ) + B1 )
+Net1r = tf.nn.relu( batch_norm_layer((tf.nn.conv2d( x_image, W1, strides=[1,1,1,1], padding='SAME' ) + B1), trainflag ))
 Pool1r = tf.nn.max_pool( Net1r, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
-Net1 = tf.nn.relu( tf.nn.conv2d( Pool1r, W1r, strides=[1,1,1,1], padding='SAME' ) + B1r )
+Net1 = tf.nn.relu( batch_norm_layer((tf.nn.conv2d( Pool1r, W1r, strides=[1,1,1,1], padding='SAME' ) + B1r),trainflag)) #batch normalization 是针对激活函数的
 Pool1 = tf.nn.max_pool( Net1, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
 #layer2, 多通道卷积
 W2_1 = tf.Variable( initial_value = tf.truncated_normal([1,1,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
 B2_1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
-Net2_1 = tf.nn.relu( tf.nn.conv2d( Pool1, W2_1, strides=[1,1,1,1], padding='SAME' ) + B2_1 )
+Net2_1 = tf.nn.relu(batch_norm_layer(( tf.nn.conv2d( Pool1, W2_1, strides=[1,1,1,1], padding='SAME' ) + B2_1 ), trainflag))
 # Pool2_1 = tf.nn.max_pool( Net2, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
 W2_3 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
 B2_3 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
-Net2_3 = tf.nn.relu( tf.nn.conv2d( Pool1, W2_3, strides=[1,1,1,1], padding='SAME' ) + B2_3 )
+Net2_3 = tf.nn.relu(batch_norm_layer(( tf.nn.conv2d( Pool1, W2_3, strides=[1,1,1,1], padding='SAME' ) + B2_3 ), trainflag))
 
 W2_5 = tf.Variable( initial_value = tf.truncated_normal([5,5,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
 B2_5 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
-Net2_5 = tf.nn.relu( tf.nn.conv2d( Pool1, W2_5, strides=[1,1,1,1], padding='SAME' ) + B2_5 )
+Net2_5 = tf.nn.relu(batch_norm_layer(( tf.nn.conv2d( Pool1, W2_5, strides=[1,1,1,1], padding='SAME' ) + B2_5 ), trainflag))
 
 Net2 = tf.concat([Net2_1, Net2_3, Net2_5],3)
 
@@ -131,12 +139,12 @@ tf.train.start_queue_runners(sess = sess)
 for i in range(TrainSteps):
     trainx, trainy = sess.run( [ images,labels ] )
     trainy_b = np.eye(10)[trainy]
-    sess.run([step,train], feed_dict={ x_input:trainx, y_label:trainy_b })
+    sess.run([step,train], feed_dict={ x_input:trainx, y_label:trainy_b, trainflag:1 })
 
     if(i%200 == 0):
         evalx, evaly =  sess.run( [ images_eval, labels_eval ] )
         evaly_b = np.eye(10)[evaly]
-        print("step:{0}, accuracy:{1}".format( i, sess.run( evaluation, feed_dict={x_input:evalx, y_label:evaly_b} ) ))
+        print("step:{0}, accuracy:{1}".format( i, sess.run( evaluation, feed_dict={x_input:evalx, y_label:evaly_b } ) ))
 
     # if(i%10 == 0):
     #     result = sess.run(merged, feed_dict = { x_input:trainx, y_label:trainy_b })
