@@ -20,6 +20,7 @@ Here are the classes in the dataset, as well as 10 random images from each:
 9 truck
 '''
 import sys
+import time
 import numpy as np
 # from cifar10 import cifar10_input
 import cifar10.cifar10_input as input10
@@ -30,7 +31,7 @@ from tensorflow.contrib.layers.python.layers import batch_norm
 Datadir = '/tmp/cifar10_data/cifar-10-batches-bin'
 
 BatchSize = 256
-TrainSteps = 18000
+TrainSteps = 10000
 
 images, labels = input10.inputs( False, data_dir = Datadir, batch_size = BatchSize )
 images_eval, labels_eval = input10.inputs( True, data_dir = Datadir, batch_size = BatchSize )
@@ -77,13 +78,13 @@ B1r = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.flo
 Net1r = tf.nn.relu( batch_norm_layer((tf.nn.conv2d( x_image, W1, strides=[1,1,1,1], padding='SAME' ) + B1), trainflag ))
 Pool1r = tf.nn.max_pool( Net1r, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
-Net1 = tf.nn.relu( batch_norm_layer((tf.nn.conv2d( Pool1r, W1r, strides=[1,1,1,1], padding='SAME' ) + B1r),trainflag)) #batch normalization 是针对激活函数的
+Net1 = tf.nn.relu( batch_norm_layer((tf.nn.conv2d( Pool1r, W1r, strides=[1,1,1,1], padding='SAME' ) + B1r),trainflag)) #batch normalization ????????
 Pool1 = tf.nn.max_pool( Net1, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
-#layer2, 多通道卷积
-W2_1 = tf.Variable( initial_value = tf.truncated_normal([1,1,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
-B2_1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
-Net2_1 = tf.nn.relu(batch_norm_layer(( tf.nn.conv2d( Pool1, W2_1, strides=[1,1,1,1], padding='SAME' ) + B2_1 ), trainflag))
+#layer2, ?????
+# W2_1 = tf.Variable( initial_value = tf.truncated_normal([1,1,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
+# B2_1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
+# Net2_1 = tf.nn.relu(batch_norm_layer(( tf.nn.conv2d( Pool1, W2_1, strides=[1,1,1,1], padding='SAME' ) + B2_1 ), trainflag))
 # Pool2_1 = tf.nn.max_pool( Net2, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
 W2_3 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
@@ -94,12 +95,12 @@ W2_5 = tf.Variable( initial_value = tf.truncated_normal([5,5,64,64], stddev = 0.
 B2_5 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
 Net2_5 = tf.nn.relu(batch_norm_layer(( tf.nn.conv2d( Pool1, W2_5, strides=[1,1,1,1], padding='SAME' ) + B2_5 ), trainflag))
 
-Net2 = tf.concat([Net2_1, Net2_3, Net2_5],3)
+Net2 = tf.concat([Net2_3, Net2_5],3)
 
 Pool2 = tf.nn.max_pool( Net2, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
 #layer3
-W3 = tf.Variable( initial_value = tf.truncated_normal([3,3,192,64], stddev = 0.001 ), dtype= tf.float32, name = 'W3' )
+W3 = tf.Variable( initial_value = tf.truncated_normal([3,3,128,64], stddev = 0.001 ), dtype= tf.float32, name = 'W3' )
 B3 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B3' )
 Net3 = tf.nn.relu( tf.nn.conv2d( Pool2, W3, strides=[1,1,1,1], padding='SAME' ) + B3 )
 Pool3 = tf.nn.max_pool( Net2, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
@@ -119,7 +120,10 @@ softmax = tf.nn.softmax( logits )
 EvalLabel =  tf.argmax( softmax, 1 )
 evaluation = tf.reduce_mean( tf.cast( tf.equal( tf.argmax(y_label,1), EvalLabel ), tf.float32 ) )
 
-loss = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits( labels = y_label, logits = logits, name = 'loss' ))
+lb=0.001
+# loss = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits( labels = y_label, logits = logits, name = 'loss' ))+lb*(tf.nn.l2_loss(W1)+tf.nn.l2_loss(W1r)+tf.nn.l2_loss(W2_1)+tf.nn.l2_loss(W2_3)+tf.nn.l2_loss(W2_5)+tf.nn.l2_loss(W3)+tf.nn.l2_loss(WL))
+loss = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits( labels = y_label, logits = logits, name = 'loss' ))+lb*(tf.nn.l2_loss(W1)+tf.nn.l2_loss(W1r)+tf.nn.l2_loss(W2_3)+tf.nn.l2_loss(W2_5)+tf.nn.l2_loss(W3)+tf.nn.l2_loss(WL))
+
 tf.summary.scalar('loss',loss)
 global_steps = tf.train.get_or_create_global_step()
 step = tf.assign_add(global_steps, 1)
@@ -136,6 +140,8 @@ sess.run( tf.global_variables_initializer( ) )
 saver = tf.train.Saver()
 tf.train.start_queue_runners(sess = sess)
 
+timeSta = time.time()
+
 for i in range(TrainSteps):
     trainx, trainy = sess.run( [ images,labels ] )
     trainy_b = np.eye(10)[trainy]
@@ -144,10 +150,12 @@ for i in range(TrainSteps):
     if(i%200 == 0):
         evalx, evaly =  sess.run( [ images_eval, labels_eval ] )
         evaly_b = np.eye(10)[evaly]
-        print("step:{0}, accuracy:{1}".format( i, sess.run( evaluation, feed_dict={x_input:evalx, y_label:evaly_b } ) ))
+        print("step:{0}, accuracy 0:{1}".format( i, sess.run( evaluation, feed_dict={x_input:evalx, y_label:evaly_b } ) ))
+        print("step:{0}, accuracy 1:{1}".format( i, sess.run( evaluation, feed_dict={x_input:trainx, y_label:trainy_b } ) ))
 
     # if(i%10 == 0):
     #     result = sess.run(merged, feed_dict = { x_input:trainx, y_label:trainy_b })
     #     writer.add_summary(result, i)
 saver.save(sess, "my_net/train_result.ckpt")
-print("save train result")
+timeEnd = time.time()
+print("save train result, train time: {} minutes, {} seconds".format( int((timeEnd-timeSta)/60), int((timeEnd-timeSta)%60) ))
