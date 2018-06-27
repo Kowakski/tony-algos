@@ -12,9 +12,9 @@ sys.path.append("../")     #set path import cifar10 codes
 import cifar10.cifar10_input as input10
 Datadir = '/tmp/cifar10_data/cifar-10-batches-bin'
 
-BatchSize = 256
+BatchSize = 128
 TrainSteps = 10000
-lr = 0.003
+lr = 0.3
 pre_mod_path = None
 # pre_mod_path='./vgg19.npy'
 
@@ -35,16 +35,15 @@ net = vgg19.Vgg19( pre_mod_path )
 net.build( x_input, train_mode )    #construct the net
 sess.run( tf.global_variables_initializer( ) )
 tf.train.start_queue_runners(sess = sess)
-sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+# sess = tf_debug.LocalCLIDebugWrapperSession(sess)
 loss = tf.reduce_sum( (y_label-net.prob)**2)
-optimizer = tf.train.MomentumOptimizer(lr, 0.9)
+optimizer = tf.train.GradientDescentOptimizer(lr)
 train = optimizer.minimize(loss)
 
 for i in range(TrainSteps):
-    print(i)
     trainx, trainy = sess.run([Rimages, labels])
     trainy_b = np.eye(10)[trainy]
     # pdb.set_trace()
     sess.run( train, feed_dict={ x_input:trainx, y_label:trainy_b, train_mode:True } )
-    if i%100 ==0:
-        print("step:{0}, loss:{1}".format(i, loss))
+    if i%50 ==0:
+        print("step:{0}, loss:{1}".format(i, sess.run(loss, feed_dict={ x_input:trainx, y_label:trainy_b, train_mode:False })))
