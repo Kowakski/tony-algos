@@ -1,0 +1,1 @@
+from cifar10_input import C10Input
