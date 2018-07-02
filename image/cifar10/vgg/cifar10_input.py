@@ -54,8 +54,7 @@ class C10Input(object):
 
         # batch_data = np.reshape( batch_data, [batchsize, 32, 32, 3] )
         batch_data = batch_data.reshape( [batchsize, 3, 32, 32] )
-
         batch_data = self.merge_channel(batch_data)
-        batch_label = np.reshape( batch_label, [batchsize, 1] )
+        # batch_label = np.reshape( batch_label, [batchsize, 1] )
 
         return batch_data, batch_label

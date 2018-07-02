@@ -31,7 +31,6 @@ class Vgg19:
         """
 
         rgb_scaled = rgb * 255.0
-        print("vgg19 build 1")
         # Convert RGB to BGR
         red, green, blue = tf.split(axis=3, num_or_size_splits=3, value=rgb_scaled)
         assert red.get_shape().as_list()[1:] == [224, 224, 1]
@@ -87,7 +86,6 @@ class Vgg19:
         self.fc8 = self.fc_layer(self.relu7, 4096, 10, "fc8")
 
         self.prob = tf.nn.softmax(self.fc8, name="prob")
-        print("vgg19 build 2")
 
         self.data_dict = None
 
