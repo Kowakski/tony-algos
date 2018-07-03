@@ -22,44 +22,27 @@ Here are the classes in the dataset, as well as 10 random images from each:
 import sys
 import time
 import numpy as np
-# from cifar10 import cifar10_input
+from cifar10_input import C10Input
 import cifar10.cifar10_input as input10
 import tensorflow as tf
 from functools import reduce
 from tensorflow.contrib.layers.python.layers import batch_norm
 
-Datadir = '/tmp/cifar10_data/cifar-10-batches-bin'
+Datadir = '/tmp/cifar-10-batches-py'
+# Datadir = '/tmp/cifar10_data/cifar-10-batches-bin'
+# Datadir = '/home/shenlin/share/Traindata/cifar10_data/cifar-10-batches-bin'
+# Datadir = '/media/shenlin/slnmobile/DatasSet/cifar-10-python.tar.gz'
 
 BatchSize = 256
 TrainSteps = 10000
 
-images, labels = input10.inputs( False, data_dir = Datadir, batch_size = BatchSize )
-images_eval, labels_eval = input10.inputs( True, data_dir = Datadir, batch_size = BatchSize )
+# images, labels = input10.inputs( False, data_dir = Datadir, batch_size = BatchSize )
+# images_eval, labels_eval = input10.inputs( True, data_dir = Datadir, batch_size = BatchSize )
 
-x_input = tf.placeholder( tf.float32, shape=[None, 24, 24, 3] )
+x_input = tf.placeholder( tf.float32, shape=[None, 32, 32, 3] )
 y_label = tf.placeholder( tf.float32, shape=[None,10] )
 trainflag = tf.placeholder(tf.bool)
 
-'''
-x_image = tf.reshape(x_input, [-1,24,24,3])
-
-Net1 = tf.layers.conv2d( x_image, filters = 64, kernel_size = [5,5], strides = (1,1), padding = 'same', name = 'net1')
-Pool1 = tf.layers.max_pooling2d(Net1, pool_size=[3,3], strides=[2,2], padding='same', name='pool1')
-
-Net2 = tf.layers.conv2d( Pool1, filters = 64, kernel_size = [3,3], strides = (1,1), padding = 'same', name = 'net2')
-Pool2 = tf.layers.max_pooling2d(Net2, pool_size=[3,3], strides=[2,2], padding='same', name='pool2')
-
-Net3 = tf.layers.conv2d( Pool1, filters = 64, kernel_size = [3,3], strides = (1,1), padding = 'same', name = 'net3')
-Pool3 = tf.layers.max_pooling2d(Net2, pool_size=[3,3], strides=[2,2], padding='same', name='pool3')
-
-nod = 1
-for i in Pool3.shape[1:]:
-    nod = nod * int(i)
-
-FullayerInput = tf.reshape(Pool3, [-1,nod])
-
-logits = tf.contrib.layers.fully_connected(FullayerInput, 10)
-'''
 
 def batch_norm_layer(value,train = None, name = 'batch_norm'):
   if train is not None:
@@ -68,7 +51,7 @@ def batch_norm_layer(value,train = None, name = 'batch_norm'):
       return batch_norm(value, decay = 0.9,updates_collections=None, is_training = False)
 
 #layer1
-x_image = tf.reshape(x_input, [-1,24,24,3])
+x_image = tf.reshape(x_input, [-1,32,32,3])
 
 W1 = tf.Variable( initial_value = tf.truncated_normal([5,1,3,64], stddev = 0.001 ), dtype= tf.float32, name = 'W1' )
 B1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 , name = 'B1')
@@ -81,11 +64,6 @@ Pool1r = tf.nn.max_pool( Net1r, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 
 Net1 = tf.nn.relu( batch_norm_layer((tf.nn.conv2d( Pool1r, W1r, strides=[1,1,1,1], padding='SAME' ) + B1r),trainflag)) #batch normalization ????????
 Pool1 = tf.nn.max_pool( Net1, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
-#layer2, ?????
-# W2_1 = tf.Variable( initial_value = tf.truncated_normal([1,1,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
-# B2_1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
-# Net2_1 = tf.nn.relu(batch_norm_layer(( tf.nn.conv2d( Pool1, W2_1, strides=[1,1,1,1], padding='SAME' ) + B2_1 ), trainflag))
-# Pool2_1 = tf.nn.max_pool( Net2, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
 W2_3 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
 B2_3 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
@@ -142,16 +120,20 @@ tf.train.start_queue_runners(sess = sess)
 
 timeSta = time.time()
 
+c10input = C10Input(Datadir)
+
 for i in range(TrainSteps):
-    trainx, trainy = sess.run( [ images,labels ] )
+    # trainx, trainy = sess.run( [ images,labels ] )
+    trainx, trainy = c10input.get_batch_data( BatchSize )
     trainy_b = np.eye(10)[trainy]
     sess.run([step,train], feed_dict={ x_input:trainx, y_label:trainy_b, trainflag:1 })
 
     if(i%200 == 0):
-        evalx, evaly =  sess.run( [ images_eval, labels_eval ] )
+        evalx, evaly =  c10input.get_batch_data( BatchSize )
         evaly_b = np.eye(10)[evaly]
         print("step:{0}, accuracy 0:{1}".format( i, sess.run( evaluation, feed_dict={x_input:evalx, y_label:evaly_b } ) ))
         print("step:{0}, accuracy 1:{1}".format( i, sess.run( evaluation, feed_dict={x_input:trainx, y_label:trainy_b } ) ))
+        print("step:{0}, accuracy 1:{1}".format( i, sess.run( loss, feed_dict={x_input:trainx, y_label:trainy_b } ) ))
 
     # if(i%10 == 0):
     #     result = sess.run(merged, feed_dict = { x_input:trainx, y_label:trainy_b })

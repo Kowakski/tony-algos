@@ -1,3 +1,4 @@
+#use floyd run --data kowalski8787/datasets/cifar10_py/1:/slnmount "python main.py"
 import sys
 import time
 import vgg19
@@ -8,11 +9,12 @@ import pdb
 from tensorflow.python import debug as tf_debug
 from cifar10_input import C10Input
 
-BatchSize = 8
+BatchSize = 16
 TrainSteps = 10000
 lr = 0.3
 pre_mod_path = None
 
+# c10input = C10Input('/slnmount/')
 c10input = C10Input('/tmp/cifar-10-batches-py')
 
 x_input = tf.placeholder( tf.float32, shape=[None, 32, 32, 3] )
@@ -39,6 +41,7 @@ train = optimizer.minimize(loss)
 for i in range(TrainSteps):
 
     images, labels = c10input.get_batch_data( BatchSize )
+    # print(images)
     trainy_b = np.eye(10)[labels]
 
     sess.run( train, feed_dict={ x_input:images, y_label:trainy_b, train_mode:True } )
