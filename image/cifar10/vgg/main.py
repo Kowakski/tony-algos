@@ -9,9 +9,9 @@ import pdb
 from tensorflow.python import debug as tf_debug
 from cifar10_input import C10Input
 
-BatchSize = 16
+BatchSize = 2
 TrainSteps = 10000
-lr = 0.3
+lr = 0.01
 pre_mod_path = None
 
 # c10input = C10Input('/slnmount/')
@@ -29,21 +29,20 @@ sess = tf.Session( )
 net = vgg19.Vgg19( pre_mod_path )
 
 net.build( Rimages, train_mode )    #construct the net
+print(net.get_var_count())
+
 sess.run( tf.global_variables_initializer( ) )
-tf.train.start_queue_runners(sess = sess)
-# sess = tf_debug.LocalCLIDebugWrapperSession(sess)
-# loss = tf.reduce_sum( tf.square(y_label-net.prob))/(2*BatchSize)
-loss = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits( labels = y_label, logits = net.prob, name = 'loss' ))
+
+loss = tf.reduce_sum((net.prob - y_label)**2)
 print("loss shape: {0}".format(loss))
 optimizer = tf.train.GradientDescentOptimizer(lr)
 train = optimizer.minimize(loss)
 
+images, labels = c10input.get_batch_data( BatchSize )
+images = images/255.0
+trainy_b = np.eye(10)[labels]
+
 for i in range(TrainSteps):
-
-    images, labels = c10input.get_batch_data( BatchSize )
-    # print(images)
-    trainy_b = np.eye(10)[labels]
-
     sess.run( train, feed_dict={ x_input:images, y_label:trainy_b, train_mode:True } )
     if i%50 ==0:
         print("step:{0}, loss:{1}".format(i, sess.run(loss, feed_dict={ x_input:images, y_label:trainy_b, train_mode:False })))
