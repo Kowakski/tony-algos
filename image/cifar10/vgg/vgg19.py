@@ -70,21 +70,21 @@ class Vgg19:
         self.conv5_4 = self.conv_layer(self.conv5_3, 512, 512, "conv5_4")
         self.pool5 = self.max_pool(self.conv5_4, 'pool5')
 
-        self.fc6 = self.fc_layer(self.pool5, 25088, 4096, "fc6")  # 25088 = ((224 // (2 ** 5)) ** 2) * 512
+        self.fc6 = self.fc_layer(self.pool5, 25088, 1024, "fc6")  # 25088 = ((224 // (2 ** 5)) ** 2) * 512
         self.relu6 = tf.nn.relu(self.fc6)
         if train_mode is not None:
             self.relu6 = tf.cond(train_mode, lambda: tf.nn.dropout(self.relu6, self.dropout), lambda: self.relu6)
         elif self.trainable:
             self.relu6 = tf.nn.dropout(self.relu6, self.dropout)
 
-        self.fc7 = self.fc_layer(self.relu6, 4096, 4096, "fc7")
+        self.fc7 = self.fc_layer(self.relu6, 1024, 256, "fc7")
         self.relu7 = tf.nn.relu(self.fc7)
         if train_mode is not None:
             self.relu7 = tf.cond(train_mode, lambda: tf.nn.dropout(self.relu7, self.dropout), lambda: self.relu7)
         elif self.trainable:
             self.relu7 = tf.nn.dropout(self.relu7, self.dropout)
 
-        self.fc8 = self.fc_layer(self.relu7, 4096, 10, "fc8")
+        self.fc8 = self.fc_layer(self.relu7, 256, 10, "fc8")
 
         self.prob = tf.nn.softmax(self.fc8, name="prob")
 

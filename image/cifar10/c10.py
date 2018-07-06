@@ -132,8 +132,7 @@ for i in range(TrainSteps):
         evalx, evaly =  c10input.get_batch_data( BatchSize )
         evaly_b = np.eye(10)[evaly]
         print("step:{0}, accuracy 0:{1}".format( i, sess.run( evaluation, feed_dict={x_input:evalx, y_label:evaly_b } ) ))
-        print("step:{0}, accuracy 1:{1}".format( i, sess.run( evaluation, feed_dict={x_input:trainx, y_label:trainy_b } ) ))
-        print("step:{0}, accuracy 1:{1}".format( i, sess.run( loss, feed_dict={x_input:trainx, y_label:trainy_b } ) ))
+        print("step:{0}, loss:{1}".format( i, sess.run( loss, feed_dict={x_input:trainx, y_label:trainy_b } ) ))
 
     # if(i%10 == 0):
     #     result = sess.run(merged, feed_dict = { x_input:trainx, y_label:trainy_b })
