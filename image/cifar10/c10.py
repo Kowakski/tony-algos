@@ -129,7 +129,7 @@ for i in range(TrainSteps):
     sess.run([step,train], feed_dict={ x_input:trainx, y_label:trainy_b, trainflag:1 })
 
     if(i%200 == 0):
-        evalx, evaly =  c10input.get_batch_data( BatchSize )
+        evalx, evaly =  c10input.get_test_data( BatchSize )
         evaly_b = np.eye(10)[evaly]
         print("step:{0}, accuracy 0:{1}".format( i, sess.run( evaluation, feed_dict={x_input:evalx, y_label:evaly_b } ) ))
         print("step:{0}, loss:{1}".format( i, sess.run( loss, feed_dict={x_input:trainx, y_label:trainy_b } ) ))

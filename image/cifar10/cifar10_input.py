@@ -13,6 +13,14 @@ class C10Input(object):
             self.FileIndex = 1
         return X,Y
 
+    #init , open file first, only once
+    def init_test_data(DataPath):
+        f = open(DataPath+'test_batch','rb')
+        datadict = p.load(f, encoding='bytes')
+        X = datadict[b'data']
+        Y = datadict[b'labels']
+        return X,Y
+
     """docstring for C10Input"""
     def __init__( self, DataPath ):
         super(C10Input, self).__init__()
@@ -20,6 +28,8 @@ class C10Input(object):
         self.index     = 0
         self.Path      = DataPath
         self.FileIndex = 1
+        self.TestDataIndex = 0
+        self.testData, self.testLabel = self.init_test_data(DataPath)
 
     def merge_channel( self, Data ):
         assert len(np.shape(Data)) == 4
@@ -58,3 +68,17 @@ class C10Input(object):
         # batch_label = np.reshape( batch_label, [batchsize, 1] )
 
         return batch_data, batch_label
+
+    def get_test_data(batchsize):
+        if(self.TestDataIndex >= 1000):
+            self.TestDataIndex = 0
+
+        if( self.TestDataIndex+batchsize > 10000) and (self.index<10000):
+            data, label = self.testData[self.TestDataIndex:9999], self.testLabel[self.TestDataIndex:9999]
+            self.TestDataIndex = self.TestDataIndex+batchsize - 9999
+            data = np.append(data, self.testData[0: self.TestDataIndex])
+            label = np.append(label, self.testLabel[0: self.TestDataIndex])
+        data, label = self.testData[self.TestDataIndex:,self.TestDataIndex+batchsize], self.testLabel[self.TestDataIndex:,self.TestDataIndex+batchsize]
+        batch = batch_data.reshape( [batchsize, 3, 32, 32] )
+        batch = self.merge_channel(batch_data)
+        return data, label
