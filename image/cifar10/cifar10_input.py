@@ -14,8 +14,8 @@ class C10Input(object):
         return X,Y
 
     #init , open file first, only once
-    def init_test_data(DataPath):
-        f = open(DataPath+'test_batch','rb')
+    def init_test_data(self, DataPath):
+        f = open(DataPath+'/test_batch','rb')
         datadict = p.load(f, encoding='bytes')
         X = datadict[b'data']
         Y = datadict[b'labels']
@@ -69,7 +69,7 @@ class C10Input(object):
 
         return batch_data, batch_label
 
-    def get_test_data(batchsize):
+    def get_test_data(self, batchsize):
         if(self.TestDataIndex >= 1000):
             self.TestDataIndex = 0
 
@@ -78,7 +78,7 @@ class C10Input(object):
             self.TestDataIndex = self.TestDataIndex+batchsize - 9999
             data = np.append(data, self.testData[0: self.TestDataIndex])
             label = np.append(label, self.testLabel[0: self.TestDataIndex])
-        data, label = self.testData[self.TestDataIndex:,self.TestDataIndex+batchsize], self.testLabel[self.TestDataIndex:,self.TestDataIndex+batchsize]
-        batch = batch_data.reshape( [batchsize, 3, 32, 32] )
-        batch = self.merge_channel(batch_data)
+        data, label = self.testData[self.TestDataIndex:self.TestDataIndex+batchsize], self.testLabel[self.TestDataIndex:self.TestDataIndex+batchsize]
+        data = data.reshape( [batchsize, 3, 32, 32] )
+        data = self.merge_channel(data)
         return data, label
