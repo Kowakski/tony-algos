@@ -33,7 +33,7 @@ Datadir = '/tmp/cifar-10-batches-py'
 # Datadir = '/home/shenlin/share/Traindata/cifar10_data/cifar-10-batches-bin'
 # Datadir = '/media/shenlin/slnmobile/DatasSet/cifar-10-python.tar.gz'
 
-BatchSize = 256
+BatchSize = 64
 TrainSteps = 10000
 
 # images, labels = input10.inputs( False, data_dir = Datadir, batch_size = BatchSize )
@@ -53,35 +53,22 @@ def batch_norm_layer(value,train = None, name = 'batch_norm'):
 #layer1
 x_image = tf.reshape(x_input, [-1,32,32,3])
 
-W1 = tf.Variable( initial_value = tf.truncated_normal([5,1,3,64], stddev = 0.001 ), dtype= tf.float32, name = 'W1' )
-B1 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 , name = 'B1')
-W1r = tf.Variable( initial_value = tf.truncated_normal([1,5,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W1' )
-B1r = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32 , name = 'B1')
-
-Net1r = tf.nn.relu( batch_norm_layer((tf.nn.conv2d( x_image, W1, strides=[1,1,1,1], padding='SAME' ) + B1), trainflag ))
-Pool1r = tf.nn.max_pool( Net1r, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
-
-Net1 = tf.nn.relu( batch_norm_layer((tf.nn.conv2d( Pool1r, W1r, strides=[1,1,1,1], padding='SAME' ) + B1r),trainflag)) #batch normalization ????????
+W1 = tf.Variable( initial_value = tf.truncated_normal([5,5,3,32], stddev = 0.001 ), dtype= tf.float32, name = 'W1' )
+B1 = tf.Variable( initial_value = tf.constant(0.1, shape = [32]), dtype= tf.float32 , name = 'B1')
+Net1 = tf.nn.relu( batch_norm_layer((tf.nn.conv2d( x_image, W1, strides=[1,1,1,1], padding='SAME' ) + B1),trainflag)) #batch normalization ????????
 Pool1 = tf.nn.max_pool( Net1, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
-
-W2_3 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
-B2_3 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
-Net2_3 = tf.nn.relu(batch_norm_layer(( tf.nn.conv2d( Pool1, W2_3, strides=[1,1,1,1], padding='SAME' ) + B2_3 ), trainflag))
-
-W2_5 = tf.Variable( initial_value = tf.truncated_normal([5,5,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
-B2_5 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
-Net2_5 = tf.nn.relu(batch_norm_layer(( tf.nn.conv2d( Pool1, W2_5, strides=[1,1,1,1], padding='SAME' ) + B2_5 ), trainflag))
-
-Net2 = tf.concat([Net2_3, Net2_5],3)
-
+'''
+W2 = tf.Variable( initial_value = tf.truncated_normal([3,3,64,64], stddev = 0.001 ), dtype= tf.float32, name = 'W2' )
+B2 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B2' )
+Net2 = tf.nn.relu(batch_norm_layer(( tf.nn.conv2d( Pool1, W2, strides=[1,1,1,1], padding='SAME' ) + B2 ), trainflag))
 Pool2 = tf.nn.max_pool( Net2, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
-
+'''
 #layer3
-W3 = tf.Variable( initial_value = tf.truncated_normal([3,3,128,64], stddev = 0.001 ), dtype= tf.float32, name = 'W3' )
-B3 = tf.Variable( initial_value = tf.constant(0.1, shape = [64]), dtype= tf.float32, name = 'B3' )
-Net3 = tf.nn.relu( tf.nn.conv2d( Pool2, W3, strides=[1,1,1,1], padding='SAME' ) + B3 )
-Pool3 = tf.nn.max_pool( Net2, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
+W3 = tf.Variable( initial_value = tf.truncated_normal([3,3,32,16], stddev = 0.001 ), dtype= tf.float32, name = 'W3' )
+B3 = tf.Variable( initial_value = tf.constant(0.1, shape = [16]), dtype= tf.float32, name = 'B3' )
+Net3 = tf.nn.relu( tf.nn.conv2d( Pool1, W3, strides=[1,1,1,1], padding='SAME' ) + B3 )
+Pool3 = tf.nn.max_pool( Net3, ksize = [1,2,2,1], strides=[1,2,2,1], padding = 'SAME' )
 
 print( "Pool2 is: ", Pool3 )
 nod = 1
@@ -93,6 +80,7 @@ FullayerInput = tf.reshape(Pool3, [-1,nod])
 WL = tf.Variable( initial_value = tf.truncated_normal([nod,10], stddev = 0.001 ), dtype = tf.float32, name = 'WL' )  #weights of logic layer
 BL = tf.Variable( initial_value = tf.constant(0.1, shape = [1, 10]), dtype = tf.float32, name = 'BL' )
 logits = tf.nn.relu( tf.matmul(FullayerInput, WL ) + BL )
+print( "logits is {}".format( logits ) )
 
 softmax = tf.nn.softmax( logits )
 EvalLabel =  tf.argmax( softmax, 1 )
@@ -100,7 +88,7 @@ evaluation = tf.reduce_mean( tf.cast( tf.equal( tf.argmax(y_label,1), EvalLabel 
 
 lb=0.001
 # loss = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits( labels = y_label, logits = logits, name = 'loss' ))+lb*(tf.nn.l2_loss(W1)+tf.nn.l2_loss(W1r)+tf.nn.l2_loss(W2_1)+tf.nn.l2_loss(W2_3)+tf.nn.l2_loss(W2_5)+tf.nn.l2_loss(W3)+tf.nn.l2_loss(WL))
-loss = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits( labels = y_label, logits = logits, name = 'loss' ))+lb*(tf.nn.l2_loss(W1)+tf.nn.l2_loss(W1r)+tf.nn.l2_loss(W2_3)+tf.nn.l2_loss(W2_5)+tf.nn.l2_loss(W3)+tf.nn.l2_loss(WL))
+loss = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits( labels = y_label, logits = logits, name = 'loss' ))+lb*(tf.nn.l2_loss(W1)+tf.nn.l2_loss(W3) )
 
 tf.summary.scalar('loss',loss)
 global_steps = tf.train.get_or_create_global_step()
