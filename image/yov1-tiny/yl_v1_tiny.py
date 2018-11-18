@@ -102,13 +102,31 @@ shape_h1 = tf.shape( hidden_1 )
         logits = slim.fully_connected( slim.flatten( net8 ), 1470, activation_fn=tf.nn.softmax )
         return logits
 
+#相交的时候长宽都是四条线，选中间两条
+  def calc_iou( self, label_boxes, logits_boxes ):
+    label_x = label_boxes[...,0]
+    label_y = label_boxes[...,1]
+    label_w = label_boxes[...,2]
+    label_h = label_boxes[...,3]
+
+    logits_x = logits_boxes[...,0]
+    logits_y = logits_boxes[...,1]
+    logits_w = logits_boxes[...,2]
+    logits_h = logits_boxes[...,3]
+
+    #没有交集
+    if( ( ( label_x-label_w/2 ) - (logits_x+logits_w/2) ) * ( ( label_y - label_h/2 ) - ( logits_y+logits_h/2 ) ) ) return 0
+    axis_x = sorted( label_x - label_w/2, label_x + label_w/2, logits_x - logits_w/2, logits_y + logits_w/2 )[1:3]
+    axis_y = sorted( label_y - label_h/2, label_y + label_h/2, logits_y - logits_h/2, logits_y + logits_w/2 )[1:3]
+
+    return ((axis_x[1] - axis_x[0])*( axis_y[1] - axis_y[0] )) / ( ( label_w * label_h ) + ( logits_w * logits_h ) )    #7*7*2
 
 #calculate loss
   def loss( self ):
 #logits
     logits_class = tf.reshape( self.logits[ :,:self.boundary1 ], [self.batchsize, self.cell, self.cell, self.object_classes] )    #batchsize*7*7*20
 
-    logits_confidence = tf.reshape( self.logits[ :, self.boundary1:self.boundary2 ], [self.batchsize, self.cell, self.cell, self.cell_boxes] )    #batchsize*7*7*2
+    logits_p = tf.reshape( self.logits[ :, self.boundary1:self.boundary2 ], [self.batchsize, self.cell, self.cell, self.cell_boxes] )    #batchsize*7*7*2, object exist or not
 
     logits_boxes = tf.reshape( self.logits[ :,self.boundary2: ], [self.batchsize, self.cell, self.cell, self.cell_boxes, 4] )    #batchsize*7*7*2*4
 
@@ -122,6 +140,13 @@ shape_h1 = tf.shape( hidden_1 )
 
 #boxes loss
     box_loss_square = tf.square( tf.sqrt( label_boxes[...,2:3] ) - tf.sqrt( logits_boxes[...,2:3] ) )
-    box_loss_delta  = tf.reduce_sum( tf.maltiply( box_loss_square, labels_response ) )
+    box_loss_delta  = tf.reduce_sum( tf.multiply( box_loss_square, labels_response ) )
     box_loss = self.lambda_coord * box_loss_delta
+
+#confidence loss
+    iou = self.calc_iou( label_classes, logits_boxes )     #7*7*2
+    conf_obj_loss = tf.multiply( iou, logits_p )
+    conf_obj_loss_tmp = tf.square( tf.substract( labels_response - conf_obj_loss ) )
+    conf_obj_loss = tf.multiply( labels_response, conf_obj_loss_tmp )
+    conf_obj_loss = tf.reduce_sum( conf_obj_loss )
 
