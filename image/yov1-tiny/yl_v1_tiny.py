@@ -42,7 +42,7 @@ class yl_v1_tiny(object):
     self.logits = self.net( )
     self.loss = self.loss( )
 
-    def net( self ):
+    def get_logits( self ):
 '''
 convolution(inputs,
           num_outputs,
@@ -150,3 +150,22 @@ shape_h1 = tf.shape( hidden_1 )
     conf_obj_loss = tf.multiply( labels_response, conf_obj_loss_tmp )
     conf_obj_loss = tf.reduce_sum( conf_obj_loss )
 
+    mask = tf.subtract( 1 - tf.ones_like( labels_response ) ) #no object is 1, or is 0
+    conf_noobj_loss = tf.multiply( mask, conf_obj_loss_tmp )
+    conf_noobj_loss = tf.reduce_sum( conf_noobj_loss )
+    conf_noobj_loss = self.lambda_noobj*conf_noobj_loss
+
+    conf_loss = conf_obj_loss + conf_noobj_loss
+
+#class loss
+    class_loss = tf.sbutract( label_classes - logits_class )
+    class_loss = tf.reduce_sum( tf.square( class_loss ), 4 )
+    class_loss = tf.multiply( labels_response, class_loss )
+    class_loss = tf.reduce_sum( class_loss )
+
+    self.loss = box_loss + conf_loss + class_loss
+    return self.loss
+
+  #得到每个bounding box的class-specific confidence score, 有两个confidence
+  def predict( self ):
+    logits = self.get_logits( )
