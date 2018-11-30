@@ -144,13 +144,13 @@ shape_h1 = tf.shape( hidden_1 )
     box_loss = self.lambda_coord * box_loss_delta
 
 #confidence loss
-    iou = self.calc_iou( label_classes, logits_boxes )     #7*7*2
+    iou = self.calc_iou( label_classes, logits_boxes )     # 7*7*2
     conf_obj_loss = tf.multiply( iou, logits_p )
     conf_obj_loss_tmp = tf.square( tf.substract( labels_response - conf_obj_loss ) )
     conf_obj_loss = tf.multiply( labels_response, conf_obj_loss_tmp )
     conf_obj_loss = tf.reduce_sum( conf_obj_loss )
 
-    mask = tf.subtract( 1 - tf.ones_like( labels_response ) ) #no object is 1, or is 0
+    mask = tf.subtract( 1 - tf.ones_like( labels_response ) ) # no object is 1, or is 0
     conf_noobj_loss = tf.multiply( mask, conf_obj_loss_tmp )
     conf_noobj_loss = tf.reduce_sum( conf_noobj_loss )
     conf_noobj_loss = self.lambda_noobj*conf_noobj_loss
@@ -166,6 +166,34 @@ shape_h1 = tf.shape( hidden_1 )
     self.loss = box_loss + conf_loss + class_loss
     return self.loss
 
+  def analysis_logits( self, logits ):
+    #check the logits is resonable
+
+    #analysis
+    ##class
+    class_probability = tf.reshape( logits[,:self.boundary1],[self.batchsize, self.cell, self.cell, self.object_classes] )
+    ##confidence
+    conf = tf.reshape( logits[,self.boundary1:self.boundary2], [self.batchsize, self.cell, self.cell, self.cell_boxes] )
+    ##boxes
+    boxes = tf.reshape( logits[,self.boundary2:], [self.batchsize, self.cell, self.cell, self.cell_boxes, 4] )
+
+    return class_probability, conf, boxes
+
+  def get_class_probability( self, cls, conf ):
+    cls_shape  = tf.shape( cls ).shape.as_list(  )
+    conf_shape = tf.shape( conf ).shape.as_list(  )
+    if(len( cls_shape ) <=1) or ( len( conf_shape ) <=1 ):    #cls 和 conf只有一维的话是不对的
+      return
+
+    if( cls_shape[:-1] != conf_shape[:-1]) or ( cls_shape[:-2] != self.cell ) or( conf_shape[:-2] != self.cell):
+      return
+#用多重循环和append拼接起来
+    result = 
+
   #得到每个bounding box的class-specific confidence score, 有两个confidence
-  def predict( self ):
+  #threshold, confidence大于这个threshold的时候才保留
+  def predict( self, threshold ):
     logits = self.get_logits( )
+    clas, conf, boxes = analysis_logits( logits ) #32*7*7*20,  32*7*7*2, 32*7*7*2*4
+    #只保留大于threshold的值
+    clas_prob = self.get_class_probability( clas, conf )   #shape is batchsize*7*7*2*20
