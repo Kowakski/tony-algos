@@ -18,6 +18,7 @@ layer     filters    size              input                output
    15 Detection Layer
 forced: Using default '0'
 Loading weights from darknet53.conv.74...Done!
+yolov1使用的dounding box 一个框只能预测一个物体
 '''
 import config as cfg
 import tensorflow as tf
@@ -27,20 +28,21 @@ class yl_v1_tiny(object):
   """docstring for ylnet"""
   def __init__(self, arg):
     super(yl_v3_tiny, self).__init__()
-    self.arg        = arg
-    self.image_size = cfg.IMAGE_SIZE
-    self.cell       = cfg.CELL_SIZE
-    self.cell_boxes = cfg.BOXES_PER_CELL
+    self.arg            = arg
+    self.image_size     = cfg.IMAGE_SIZE
+    self.cell           = cfg.CELL_SIZE
+    self.cell_boxes     = cfg.BOXES_PER_CELL
     self.object_classes = cfg.OBJECT_CLASSES
-    self.boundary1  = self.cell*self.cell*self.object_classes   #classes
-    self.boundary2  = self.cell*self.cell*self.cell_boxes    #confidence,left are center axis and scale
-    self.lambda_coord = cfg.LAMBDA_COORD
-    self.lambda_noobj = cfg.LAMBDA_NOOBJ
-    self.batchsize = cfg.TRAIN_BATCHSIZE
-    self.images = tf.placeholder( dtype = tf.float32, shape = [None, self.image_size, self.image_size, 3], name='x_input' )
-    self.labels = tf.placeholder( dtype = , shape = [ None, self.cell, self.cell ], name='labels' )
-    self.logits = self.net( )
-    self.loss = self.loss( )
+    self.boundary1      = self.cell*self.cell*self.object_classes   #classes
+    self.boundary2      = self.cell*self.cell*self.cell_boxes    #confidence,left are center axis and scale
+    self.lambda_coord   = cfg.LAMBDA_COORD
+    self.lambda_noobj   = cfg.LAMBDA_NOOBJ
+    self.nms_threholds  = cfg.NMS_THREHOLDS
+    self.batchsize      = cfg.TRAIN_BATCHSIZE
+    self.images         = tf.placeholder( dtype = tf.float32, shape = [None, self.image_size, self.image_size, 3], name='x_input' )
+    self.labels         = tf.placeholder( dtype = , shape = [ None, self.cell, self.cell ], name='labels' )
+    self.logits         = self.net( )
+    self.loss           = self.loss( )
 
     def get_logits( self ):
 '''
@@ -187,13 +189,74 @@ shape_h1 = tf.shape( hidden_1 )
 
     if( cls_shape[:-1] != conf_shape[:-1]) or ( cls_shape[:-2] != self.cell ) or( conf_shape[:-2] != self.cell):
       return
+
 #用多重循环和append拼接起来
-    result = 
+    cls_specific1 = np.multiply( cls[-1],conf[-1][0] )
+    cls_specific2 = np.multiply( cls[-1],conf[-1][1] )
+    cls_specific = np.append( cls_specific1, cls_specific2, -2 )
+    return cls_specific      #shape is 32*7*7*2*20
+
+#这个函数的返回结果是[[ 类,[概率,box], [概率,box] ], [ 类,[概率,box], [概率,box] ], [ 类,[概率,box], [概率,box] ]...]这样的
+  def do_nms( self, classes_index, classes_probs, filtered_boxes ):
+    assert len( classes_index[-2] ) == len( classes_probs[-2] ) and len( classes_index[-2] ) == len( filtered_boxes[-2] )
+    result = []     #用来保存结果
+    for i in range( self.object_classes ):    #每一种类型遍历一遍
+      cls_index = np.argwhere( classed_index )
+      if( !len( cls_index ) ):
+        continue        #这个类别没有物体存在，直接开始下一类
+      prob = classes_probs[cls_index[0], cls_index[1]]  #把这种类型物体的概率值全部找出来, batchsize*1
+      boxes = filtered_boxes[cls_index[0], cls_index[1]]  #把这种类型的物体的框框全部找出来，这个是跟上面的概率值一一对应的，batchsize*1
+      prob_and_boxes = np.append( prob, boxes, 1 )  #把概率和框框联系到一起，类别是i，合并成[概率，bounding box]，这样子可以排序，并且对应的框框位置信息不回乱
+
+      # 开始真正的nms
+      # 排序
+      prob_and_boxes = np.sort( prob_and_boxes, 0 )    #[ [概率，box], [概率，box] ]
+
+      # 计算IOU，删除一些框
+      single_class_result = [i]      #一个类别的物体全部结果都保存在这个里面
+      while prob_and_boxes:
+        max_value = prob_and_boxes.pop( 0 )  #把最大的先取出来
+        for i in range( len( prob_and_boxes ) ):  #拿剩下的所有的跟取出来的比较
+          nms_iou = self.get_nms_iou( max_value, prob_and_boxes[i] )
+          if nms_iou > self.nms_threholds:
+            prob_and_boxes.remove( prob_and_boxes[i] )  #如果IOU超出阈值，就把这个预测结果从prob_and_boxes里面删掉
+        single_class_result.append( max_value )   #for 循环之后，删除掉所有和最大概率预测结果高度重复的预测结果，然后把最大概率预测结果保留
+
+      # while 循环之后把当前类添加到结果中append这样一个元素结果list [ 类，[概率，box], [概率，box] ]
+      result.append( single_class_result )
+
+    #找出所有的结果之后返回
+    return result
+
 
   #得到每个bounding box的class-specific confidence score, 有两个confidence
   #threshold, confidence大于这个threshold的时候才保留
   def predict( self, threshold ):
     logits = self.get_logits( )
-    clas, conf, boxes = analysis_logits( logits ) #32*7*7*20,  32*7*7*2, 32*7*7*2*4
+    clas, conf, boxes = self.analysis_logits( logits ) #32*7*7*20,  32*7*7*2, 32*7*7*2*4
     #只保留大于threshold的值
-    clas_prob = self.get_class_probability( clas, conf )   #shape is batchsize*7*7*2*20
+    clas_prob = self.get_class_probability( clas, conf )   #shape is 32*7*7*2*20, data type is numpy narray
+    if not isinstance( clas_prob, np.ndarray ):
+      clas_prob = np.array( clas_prob )   #转换成ndarray类型，不然下面的操作是不可以的
+
+    mask = clas_prob >= threshold         #bool type
+
+    clas_prob = np.multiply( clas_prob, mask )       #大于设定的阈值的预测值才保留下来，其他的全部设置为0 confidence*Pr( clss )大于阀值的就保留下来，小于阀值的就不要了
+
+    #1)获取大于0的值的位置索引
+    filters = np.nonzero( clas_prob )    #返回的是一个n*5维度的narray，n是多少个非零的值，5是clas_prob的维数:batchisize, cell, cell, cell_boxes, class,一次只能检测一张，不然这个地方就把整个batchsize混到一起了
+    #2)根据1)获取的索引，把所有符合要求的clas_prob提出来，组成一个新的list, 每一个的元素是
+    filtered_clas_prob = clas_prob[filters[:,0],filters[:,1],filters[:,2],filters[:,3]]      #batchsize*numbers *20  numbers指的是各种类型一共有多少个物体
+    #3)根据1)获取的索引，把所有的框框提取出来，组成一个新的list，2）3）之所以可以组成一个新的list而抛弃原来的7*7信息，是因为有了clas prob和位置就可以预测物体在哪里了。
+    filtered_boxes = boxes[filters[:,0],filters[:,1],filters[:,2],filters[:,3]]  #操作的单个元素是box，所以只取到filters[:,3]   #batchsize*numbers*4
+        #这里有个问题，会不会一个grid里面有两个物体呢？？会的，可能有两个相同物体，但是不会有两个不同物体，我们是根据confidence*Pr( clss )来判断的，里面一共只有两个confidence，乘以的是相同的Pr( clss )
+    assert len( filtered_boxes ) == len( filtered_clas_prob )
+
+    #判断是属于哪些类
+    classes_index = filtered_clas_prob.argmax( -1 )       #返回整数，表示第几类,batchsize*numbers*1
+    classes_probs = np.amax( -1 )        #把概率值取出来，做nms的时候要用,batchsize*numbers*1
+    assert len( classes_index ) == len( filtered_boxes ) and len( classes_boxes ) == len( classes_probs ) #assert 可以理解为，保证后面这个条件是满足的
+    #到这个位置，预测出了类别和bounding box，这里的输出没有用softmax
+
+    #do nms，把多余的框框删掉，非极大值抑制
+    result_cls, result_cls_prob, result_boxes = self.do_nms( classes_index, classes_probs, filtered_boxes )   #
