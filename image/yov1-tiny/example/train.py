@@ -61,7 +61,6 @@ class Solver(object):
 
         train_timer = Timer()
         load_timer = Timer()
-        pdb.set_trace( )
         for step in range(1, self.max_iter + 1):
 
             load_timer.tic()
