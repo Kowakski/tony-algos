@@ -1,0 +1,1 @@
+g++ `pkg-config opencv --cflags` example_04-01.cpp -o 0401_exe `pkg-config opencv --libs`
