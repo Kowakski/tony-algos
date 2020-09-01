@@ -65,6 +65,10 @@ static bool matTest(Mat &img)
 int main()
 {
 	Mat m2(3, 4, CV_8UC2, Scalar_<uchar>(1, 2));
+	Mat m3(3, 4, CV_8UC3, Scalar_<uchar>(1,2,3));
+	Mat m4(3, 4, CV_16UC3, Scalar_<uchar>(1,2,3));
+	Mat m5(3, 4, CV_16UC3, Scalar_<short>(1,2,3));
+	cout << m3.step << endl;
 #if 0
 	Mat srcimg;
 	srcimg = imread("/home/sln/share/draft/0001.jpg");

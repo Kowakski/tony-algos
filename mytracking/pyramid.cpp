@@ -143,11 +143,42 @@ void mySoble( const Mat& src, Mat& dst ){
 
 template<typename T>
 void prymid_( const Mat& src, Mat& dst ){
-    T*
+    T* srcptr          = NULL;
+    T* dstptr          = NULL;
+
     int cn = src.channels();
     dst.create( src.rows/2, src.cols/2, src.type() );
     Mat temp = src.clone();
     GaussianBlur(temp,temp,Size(3,3),0);
+
+    dstptr = (T*)dst.data;
+
+    for(  int i = 0; i < src.rows; i += 2 ){
+      for( int j = 0; j < src.cols; j += 2 ){
+        srcptr = (T*)src.data + i*src.step[0] + j*src.step[1];
+        switch( cn ){
+          case 1:
+            dstptr[0] = srcptr[0];
+          break;
+
+          case 2:
+            dstptr[0] = srcptr[0];
+
+            dstptr[1] = srcptr[1];
+          break;
+
+          case 3:
+            dstptr[0] = srcptr[0];
+
+            dstptr[1] = srcptr[1];
+
+            dstptr[2] = srcptr[2];
+          break;
+        }
+      }
+    }
+
+    return;
 
 }
 
@@ -172,6 +203,10 @@ int main( int argc, char*argv[] ){
         exit(1);
     }
     Mat oppyr1, oppyr2, oppyr3;
+
+    Mat mm( 4, 4, CV_8UC3, Scalar_<uchar>(1,2,3) );
+    Mat mmdst;
+    myprymid( mm, mmdst );
     pyrDown( srcImage, oppyr1 );
     // imshow("pyr1",oppyr1);
     Mat prop( 4,5,CV_16UC3, Scalar(1,2,3) );
