@@ -1,0 +1,41 @@
+cmake_minimum_required(VERSION 2.8)
+project(yyy)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")	# -std=gnu++11
+set(PATH ${PROJECT_SOURCE_DIR})
+SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
+SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall -fPIC")
+
+
+include_directories(${PATH}/include 
+                   
+)
+link_directories(${PATH}/lib     
+)
+
+# set(nnie_src sample_comm_ive.c sample_comm_nnie.c sample_comm_svp.c sample_ive_ann.c sample_ive_bg_model.c
+# sample_ive_canny.c sample_ive_cnn.c sample_ive_gmm.c sample_ive_gmm2.c sample_ive_md.c sample_ive_od.c
+# sample_ive_pkg_to_sp.c sample_ive_sobel_with_cached_mem.c sample_ive_st_and_lk.c sample_ive_svm.c
+# sample_ive_test_memory.c sample_svp_nnie_software.c vhd_nnie_yolov3.cpp
+# )
+
+##编译静态库
+#add_library(vhd_nnie_yolov3 STATIC ${nnie_src})
+##编译动态库
+#add_library(vhd_nnie_yolov3 SHARED ${nnie_src})
+
+# 包含指定头文件所在的目录
+#target_include_directories(hello_library PUBLIC  ${PROJECT_SOURCE_DIR}/include)
+
+# 创建可执行程序
+add_executable(sss demo.cpp)
+# 链接动态库文件
+target_link_libraries(sss
+${PROJECT_SOURCE_DIR}/lib/libopencv_core.so
+${PROJECT_SOURCE_DIR}/lib/libopencv_highgui.so
+${PROJECT_SOURCE_DIR}/lib/libopencv_imgproc.so
+${PROJECT_SOURCE_DIR}/lib/libopencv_imgcodecs.so
+${PROJECT_SOURCE_DIR}/lib/libopencv_video.so
+${PROJECT_SOURCE_DIR}/lib/libopencv_videoio.so
+pthread
+)
