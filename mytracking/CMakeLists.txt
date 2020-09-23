@@ -1,4 +1,5 @@
 # cmake needs this line
+# g++ `pkg-config opencv --cflags` example_04-01.cpp -o 0401_exe `pkg-config opencv --libs`
 cmake_minimum_required(VERSION 2.8)
 
 # Define project name
