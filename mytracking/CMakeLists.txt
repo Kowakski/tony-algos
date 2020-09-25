@@ -1,6 +1,6 @@
 # cmake needs this line
 # g++ `pkg-config opencv --cflags` example_04-01.cpp -o 0401_exe `pkg-config opencv --libs`
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 
 # Define project name
 project(opencvTest)
@@ -11,6 +11,8 @@ project(opencvTest)
 # set(OpenCV_DIR /opt/opencv-2.4.11/share/OpenCV) 指定版本
 find_package(OpenCV REQUIRED)
 
+#option(EXP "enable example compilation" OFF)
+option(EXP "enable debug compilation" OFF)
 # If the package has been found, several variables will
 # be set, you can find the full list with descriptions
 # in the OpenCVConfig.cmake file.
@@ -23,8 +25,17 @@ message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 # Add OpenCV headers location to your include paths
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+#add_executable(main ./src/main.cpp)
+
 # Declare the executable target built from your sources
-add_executable(main ./src/main.cpp)
+if(EXP)
+    add_executable(exp ./src/lkdemo.cpp)
+    target_link_libraries(exp ${OpenCV_LIBS})
+else()
+    #message( STATUS "exp codes not open" )
+    add_executable(main ./src/main.cpp)
+    target_link_libraries(main ${OpenCV_LIBS})
+endif()
 
 # Link your application with OpenCV libraries
-target_link_libraries(main ${OpenCV_LIBS})
+# target_link_libraries(main ${OpenCV_LIBS})
