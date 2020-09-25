@@ -13,6 +13,8 @@ find_package(OpenCV REQUIRED)
 
 #option(EXP "enable example compilation" OFF)
 option(EXP "enable debug compilation" OFF)
+
+add_compile_options(-std=c++11 -Wall -g)
 # If the package has been found, several variables will
 # be set, you can find the full list with descriptions
 # in the OpenCVConfig.cmake file.

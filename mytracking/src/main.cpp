@@ -78,22 +78,52 @@ int main( int argc, char* argv[] ){
         cout<<"read error!"<<endl;
         exit(1);
     }
-    cv::Mat srcImgtmp;
-    srcImg.copyTo( srcImgtmp );
+    cout << "image size:" << srcImg.cols << "x" << srcImg.rows << endl;
+    cv::Mat ImgShow; //ImgShow used to show, srcImg used to algorithm
+    srcImg.copyTo( ImgShow );
     cv::imshow( WINDOW_NAME, srcImg );
     //【1】准备参数
     g_rectangle = Rect(-1,-1,0,0);
-    setMouseCallback(WINDOW_NAME,on_MouseHandle,(void*)&srcImg);
+    setMouseCallback( WINDOW_NAME, on_MouseHandle, (void*)&srcImg);
 
     while( 1 ){
         waitKey(10);
         if( contFlag ){
-            cout << "( " << g_rectangle.x <<","<<g_rectangle.y<<" )" << g_rectangle.width << "x" << g_rectangle.height << endl;
+            cout << "( " << g_rectangle.x << "," << g_rectangle.y << " )" << g_rectangle.width << "x" << g_rectangle.height << endl;
             break;
         }
-        srcImg.copyTo( srcImgtmp );
-        if( g_bDrawingBox ) DrawRectangle( srcImgtmp, g_rectangle );
-        imshow( WINDOW_NAME, srcImgtmp );
+        srcImg.copyTo( ImgShow );
+        if( g_bDrawingBox ) DrawRectangle( ImgShow, g_rectangle );
+        imshow( WINDOW_NAME, ImgShow );
+        continue;
+    }
+
+    //模板，感兴趣区间获取角点
+    Mat keyPointMask( srcImg.rows, srcImg.cols, CV_8UC1, Scalar_<uchar>(0) );
+    std::vector<Point2f> keyPoints;
+
+    // cout << "line "<< __LINE__ << endl;
+
+    for( int i = g_rectangle.x; i < g_rectangle.x + g_rectangle.height; i++ ){
+        for( int j = g_rectangle.y; j < g_rectangle.y + g_rectangle.width; j++ ){
+            keyPointMask.at < uchar > (i,j) = 1;
+        }
+    }
+    Mat gray;
+    cvtColor( srcImg, gray, COLOR_BGR2GRAY );
+
+    // cout << "Befor get good features: " << gray.cols << " " << gray.rows << "mask:" << keyPointMask.cols << " "<<keyPointMask.rows << endl;
+    goodFeaturesToTrack( gray, keyPoints, 500, 0.01, 10, keyPointMask, 3, 3, 0, 0.04 );
+    // cout << "After get good features" << endl;
+
+    for( int i = 0; i < keyPoints.size(); i++ ){
+        circle( ImgShow, keyPoints[i], 3, Scalar(0, 255, 0), -1, 8 );
+    }
+
+    imshow( WINDOW_NAME, ImgShow ); //显示角点
+
+    while(1){        //显示，按下 c 键继续
+        if( waitKey(30) == 'c' ) break;
         continue;
     }
 
