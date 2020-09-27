@@ -1,3 +1,0 @@
-/home/sln/share/tony-algos/mytracking/build/CMakeFiles/rebuild_cache.dir
-/home/sln/share/tony-algos/mytracking/build/CMakeFiles/main.dir
-/home/sln/share/tony-algos/mytracking/build/CMakeFiles/edit_cache.dir
