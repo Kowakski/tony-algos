@@ -165,16 +165,21 @@ int main( int argc, char* argv[] ){
         imgPath = get_img_path( direcPath, imgNum, 4, "jpg" );
         srcImg = cv::imread( imgPath, IMREAD_COLOR );
         imgNum++;
-
+        cout << "line: "<<__LINE__<<endl;
         if( srcImg.empty() ){
             cout << "img empty" << endl;
             break;
         }
 
         getline( label, stringitem, '\n' );
+        if( stringitem.length() <= 0 ){
+            cout << "label read fail"<<endl;
+            break;
+        }
         stringitem.pop_back();
         SplitString( stringitem, tmp, "\t" );
         cout << tmp[0] <<" "<< tmp[1] <<" "<< tmp[2]<<" "<< tmp[3] << endl;
+        cout << "line: "<<__LINE__<<endl;
 
         cout << "key 0: "  << keyPoints[0].size() << endl;
         if( keyPoints[0].size() > 0 ){
@@ -191,11 +196,14 @@ int main( int argc, char* argv[] ){
                 circle( srcImg, keyPoints[1][i], 3, Scalar(255, 0, 0), -1, 8 );
             }
         }
+        cout << "line: "<<__LINE__<<endl;
         cv::swap( preGray, gray );
         std::swap( keyPoints[0], keyPoints[1] );
 
+        cout << "line: "<<__LINE__<<endl;
         rectangle( srcImg, Point( stoi(tmp[0]), stoi(tmp[1]) ), Point( stoi(tmp[0])+stoi(tmp[2]), stoi(tmp[1])+stoi(tmp[3]) ), Scalar(0,0,255), 1, LINE_8, 0 );
         cv::imshow( WINDOW_NAME, srcImg );
+        cout << "line: "<<__LINE__<<endl;
         if( waitKey( 30 ) == 27 ) break;//按下ESC键，程序退出
     }
     label.close();
