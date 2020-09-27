@@ -54,6 +54,22 @@ void help( char* argv[] ){
     cout << endl;
     return;
 }
+
+void SplitString(const std::string& s, std::vector<std::string>& v, const std::string& c){
+  std::string::size_type pos1, pos2;
+  if( s.length() <= 0 ) return;
+  pos2 = s.find(c);
+  pos1 = 0;
+  v.clear();
+  while(std::string::npos != pos2){
+    v.push_back(s.substr(pos1, pos2-pos1));
+    pos1 = pos2 + c.size();
+    pos2 = s.find(c, pos1);
+  }
+  if(pos1 != s.length())
+    v.push_back(s.substr(pos1));
+}
+
 //-----------------------------------【main( )函数】--------------------------------------------
 //      描述：控制台应用程序的入口函数，我们的程序从这里开始执行
 //-------------------------------------------------------------------------------------------------
@@ -66,9 +82,13 @@ int main( int argc, char* argv[] ){
     }
 
     int imgNum = 1;
+    ifstream label;
     string imgPath;
     string direcPath = argv[1];
     contFlag = false;
+
+    string stringitem;
+    vector< string > tmp;
 
     namedWindow( WINDOW_NAME, WINDOW_AUTOSIZE );
     //read first one
@@ -79,9 +99,18 @@ int main( int argc, char* argv[] ){
         exit(1);
     }
     cout << "image size:" << srcImg.cols << "x" << srcImg.rows << endl;
+
+    label.open("/home/sln/share/datas/Walking2/groundtruth_rect.txt");
+    getline( label, stringitem, '\n' );
+    stringitem.pop_back();
+    SplitString( stringitem, tmp, "\t" );
+    cout << tmp[0] <<" "<< tmp[1] <<" "<< tmp[2]<<" "<< tmp[3] << endl;
+
+    rectangle( srcImg, Point( stoi(tmp[0]), stoi(tmp[1]) ), Point( stoi(tmp[0])+stoi(tmp[2]), stoi(tmp[1])+stoi(tmp[3]) ), Scalar(0,0,255), 1, LINE_8, 0 );
     cv::Mat ImgShow; //ImgShow used to show, srcImg used to algorithm
     srcImg.copyTo( ImgShow );
     cv::imshow( WINDOW_NAME, srcImg );
+
     //【1】准备参数
     g_rectangle = Rect(-1,-1,0,0);
     setMouseCallback( WINDOW_NAME, on_MouseHandle, (void*)&srcImg);
@@ -122,7 +151,7 @@ int main( int argc, char* argv[] ){
 
     imshow( WINDOW_NAME, ImgShow ); //显示角点
 
-#if 1
+#if 0
     while(1){        //显示，按下 c 键继续
         if( waitKey(30) == 'c' ) break;
         continue;
@@ -141,6 +170,12 @@ int main( int argc, char* argv[] ){
             cout << "img empty" << endl;
             break;
         }
+
+        getline( label, stringitem, '\n' );
+        stringitem.pop_back();
+        SplitString( stringitem, tmp, "\t" );
+        cout << tmp[0] <<" "<< tmp[1] <<" "<< tmp[2]<<" "<< tmp[3] << endl;
+
         cout << "key 0: "  << keyPoints[0].size() << endl;
         if( keyPoints[0].size() > 0 ){
             vector<uchar> status;
@@ -159,9 +194,11 @@ int main( int argc, char* argv[] ){
         cv::swap( preGray, gray );
         std::swap( keyPoints[0], keyPoints[1] );
 
+        rectangle( srcImg, Point( stoi(tmp[0]), stoi(tmp[1]) ), Point( stoi(tmp[0])+stoi(tmp[2]), stoi(tmp[1])+stoi(tmp[3]) ), Scalar(0,0,255), 1, LINE_8, 0 );
         cv::imshow( WINDOW_NAME, srcImg );
         if( waitKey( 30 ) == 27 ) break;//按下ESC键，程序退出
     }
+    label.close();
     return 0;
 }
 
