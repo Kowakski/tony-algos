@@ -86,6 +86,8 @@ int main( int argc, char* argv[] ){
     string imgPath;
     string direcPath = argv[1];
     contFlag = false;
+    Size subPixWinSize(10,10), winSize(31,31);
+    TermCriteria termcrit(TermCriteria::COUNT|TermCriteria::EPS,20,0.03);
 
     string stringitem;
     vector< string > tmp;
@@ -104,8 +106,7 @@ int main( int argc, char* argv[] ){
     getline( label, stringitem, '\n' );
     stringitem.pop_back();
     SplitString( stringitem, tmp, "\t" );
-    cout << tmp[0] <<" "<< tmp[1] <<" "<< tmp[2]<<" "<< tmp[3] << endl;
-
+    cout << "label is: " << tmp[0] <<" "<< tmp[1] <<" "<< tmp[2]<<" "<< tmp[3] << endl;
     rectangle( srcImg, Point( stoi(tmp[0]), stoi(tmp[1]) ), Point( stoi(tmp[0])+stoi(tmp[2]), stoi(tmp[1])+stoi(tmp[3]) ), Scalar(0,0,255), 1, LINE_8, 0 );
     cv::Mat ImgShow; //ImgShow used to show, srcImg used to algorithm
     srcImg.copyTo( ImgShow );
@@ -143,11 +144,14 @@ int main( int argc, char* argv[] ){
 
     // cout << "Befor get good features: " << gray.cols << " " << gray.rows << "mask:" << keyPointMask.cols << " "<<keyPointMask.rows << endl;
     goodFeaturesToTrack( gray, keyPoints[0], 500, 0.01, 10, keyPointMask, 3, 3, 0, 0.04 );
+    cornerSubPix( gray, keyPoints[0], subPixWinSize, Size(-1,-1), termcrit );
     // cout << "After get good features" << endl;
-
+    cout << "key points:";
     for( int i = 0; i < keyPoints[0].size(); i++ ){
+        cout << "(" << keyPoints[0][i]<<")" << " ";
         circle( ImgShow, keyPoints[0][i], 3, Scalar(0, 255, 0), -1, 8 );
     }
+    cout << endl;
 
     imshow( WINDOW_NAME, ImgShow ); //显示角点
 
@@ -165,7 +169,7 @@ int main( int argc, char* argv[] ){
         imgPath = get_img_path( direcPath, imgNum, 4, "jpg" );
         srcImg = cv::imread( imgPath, IMREAD_COLOR );
         imgNum++;
-        cout << "line: "<<__LINE__<<endl;
+        // cout << "line: "<<__LINE__<<endl;
         if( srcImg.empty() ){
             cout << "img empty" << endl;
             break;
@@ -178,32 +182,30 @@ int main( int argc, char* argv[] ){
         }
         stringitem.pop_back();
         SplitString( stringitem, tmp, "\t" );
-        cout << tmp[0] <<" "<< tmp[1] <<" "<< tmp[2]<<" "<< tmp[3] << endl;
-        cout << "line: "<<__LINE__<<endl;
+        // cout << tmp[0] <<" "<< tmp[1] <<" "<< tmp[2]<<" "<< tmp[3] << endl;
+        // cout << "line: "<<__LINE__<<endl;
 
-        cout << "key 0: "  << keyPoints[0].size() << endl;
+        // cout << "key 0: "  << keyPoints[0].size() << endl;
         if( keyPoints[0].size() > 0 ){
             vector<uchar> status;
             vector<float> err;
-            Size winSize(31,31);
-            TermCriteria termcrit(TermCriteria::COUNT|TermCriteria::EPS,20,0.03);
 
             cvtColor( srcImg, gray, COLOR_BGR2GRAY );
             calcOpticalFlowPyrLK( preGray, gray, keyPoints[0], keyPoints[1], status, err, winSize, 3, termcrit, 0, 0.001  );
-            cout << "In trk :" << keyPoints[0].size() << " " << keyPoints[1].size() << endl;
+            // cout << "In trk :" << keyPoints[0].size() << " " << keyPoints[1].size() << endl;
 
             for( int i = 0; i < keyPoints[1].size(); i++ ){
                 circle( srcImg, keyPoints[1][i], 3, Scalar(255, 0, 0), -1, 8 );
             }
         }
-        cout << "line: "<<__LINE__<<endl;
+        // cout << "line: "<<__LINE__<<endl;
         cv::swap( preGray, gray );
         std::swap( keyPoints[0], keyPoints[1] );
 
-        cout << "line: "<<__LINE__<<endl;
+        // cout << "line: "<<__LINE__<<endl;
         rectangle( srcImg, Point( stoi(tmp[0]), stoi(tmp[1]) ), Point( stoi(tmp[0])+stoi(tmp[2]), stoi(tmp[1])+stoi(tmp[3]) ), Scalar(0,0,255), 1, LINE_8, 0 );
         cv::imshow( WINDOW_NAME, srcImg );
-        cout << "line: "<<__LINE__<<endl;
+        // cout << "line: "<<__LINE__<<endl;
         if( waitKey( 30 ) == 27 ) break;//按下ESC键，程序退出
     }
     label.close();
