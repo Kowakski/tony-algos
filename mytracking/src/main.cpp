@@ -100,7 +100,7 @@ int main( int argc, char* argv[] ){
 
     //模板，感兴趣区间获取角点
     Mat keyPointMask( srcImg.rows, srcImg.cols, CV_8UC1, Scalar_<uchar>(0) );
-    std::vector<Point2f> keyPoints;
+    std::vector<Point2f> keyPoints[2];
 
     // cout << "line "<< __LINE__ << endl;
 
@@ -109,32 +109,56 @@ int main( int argc, char* argv[] ){
             keyPointMask.at < uchar > (i,j) = 1;
         }
     }
-    Mat gray;
+    Mat gray, preGray;
     cvtColor( srcImg, gray, COLOR_BGR2GRAY );
 
     // cout << "Befor get good features: " << gray.cols << " " << gray.rows << "mask:" << keyPointMask.cols << " "<<keyPointMask.rows << endl;
-    goodFeaturesToTrack( gray, keyPoints, 500, 0.01, 10, keyPointMask, 3, 3, 0, 0.04 );
+    goodFeaturesToTrack( gray, keyPoints[0], 500, 0.01, 10, keyPointMask, 3, 3, 0, 0.04 );
     // cout << "After get good features" << endl;
 
-    for( int i = 0; i < keyPoints.size(); i++ ){
-        circle( ImgShow, keyPoints[i], 3, Scalar(0, 255, 0), -1, 8 );
+    for( int i = 0; i < keyPoints[0].size(); i++ ){
+        circle( ImgShow, keyPoints[0][i], 3, Scalar(0, 255, 0), -1, 8 );
     }
 
     imshow( WINDOW_NAME, ImgShow ); //显示角点
 
+#if 1
     while(1){        //显示，按下 c 键继续
         if( waitKey(30) == 'c' ) break;
         continue;
     }
+#endif
 
+    gray.copyTo( preGray );
+
+    //tracking begin
     while(1){
         imgPath = get_img_path( direcPath, imgNum, 4, "jpg" );
         srcImg = cv::imread( imgPath, IMREAD_COLOR );
         imgNum++;
+
         if( srcImg.empty() ){
             cout << "img empty" << endl;
             break;
         }
+        cout << "key 0: "  << keyPoints[0].size() << endl;
+        if( keyPoints[0].size() > 0 ){
+            vector<uchar> status;
+            vector<float> err;
+            Size winSize(31,31);
+            TermCriteria termcrit(TermCriteria::COUNT|TermCriteria::EPS,20,0.03);
+
+            cvtColor( srcImg, gray, COLOR_BGR2GRAY );
+            calcOpticalFlowPyrLK( preGray, gray, keyPoints[0], keyPoints[1], status, err, winSize, 3, termcrit, 0, 0.001  );
+            cout << "In trk :" << keyPoints[0].size() << " " << keyPoints[1].size() << endl;
+
+            for( int i = 0; i < keyPoints[1].size(); i++ ){
+                circle( srcImg, keyPoints[1][i], 3, Scalar(255, 0, 0), -1, 8 );
+            }
+        }
+        cv::swap( preGray, gray );
+        std::swap( keyPoints[0], keyPoints[1] );
+
         cv::imshow( WINDOW_NAME, srcImg );
         if( waitKey( 30 ) == 27 ) break;//按下ESC键，程序退出
     }
