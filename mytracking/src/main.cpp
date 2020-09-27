@@ -39,18 +39,20 @@ std::string get_img_path( const string dircPath, const int curNum, const int wid
         divTmp /= 10;
     }
 
+    //how many zeros
     for( int i = 0; i < width - curNumDepth; i++ ){
         zeros += "0";
     }
 
-    rlt = dircPath + zeros + std::to_string( curNum ) + "."+sub;
+    rlt = dircPath + "img/" + zeros + std::to_string( curNum ) + "."+sub;
+    // cout << "path is " << rlt << endl;
     return rlt;
 }
 
 void help( char* argv[] ){
     cout << endl;
     cout<< "Usage tips:"<<endl;
-    cout << argv[0] << " /home/sln/share/datas/Walking2/img/"<< endl;
+    cout << argv[0] << " /home/sln/share/datas/Walking2/"<< endl;
     cout << endl;
     return;
 }
@@ -75,7 +77,7 @@ void SplitString(const std::string& s, std::vector<std::string>& v, const std::s
 //-------------------------------------------------------------------------------------------------
 int main( int argc, char* argv[] ){
     //【0】改变console字体颜色
-    system("color 9F");
+    // system("color 9F");
     if( argc != 2 ){
         help( argv );
         return 0;
@@ -102,7 +104,7 @@ int main( int argc, char* argv[] ){
     }
     cout << "image size:" << srcImg.cols << "x" << srcImg.rows << endl;
 
-    label.open("/home/sln/share/datas/Walking2/groundtruth_rect.txt");
+    label.open( (direcPath + "groundtruth_rect.txt").c_str() );
     getline( label, stringitem, '\n' );
     stringitem.pop_back();
     SplitString( stringitem, tmp, "\t" );
@@ -119,7 +121,7 @@ int main( int argc, char* argv[] ){
     while( 1 ){
         waitKey(10);
         if( contFlag ){
-            cout << "( " << g_rectangle.x << "," << g_rectangle.y << " )" << g_rectangle.width << "x" << g_rectangle.height << endl;
+            cout << " Draw Box: " << "( " << g_rectangle.x << "," << g_rectangle.y << " )" << "("<< g_rectangle.x + g_rectangle.width  << "," << g_rectangle.y + g_rectangle.height << ")" << endl;
             break;
         }
         srcImg.copyTo( ImgShow );
@@ -134,16 +136,19 @@ int main( int argc, char* argv[] ){
 
     // cout << "line "<< __LINE__ << endl;
 
-    for( int i = g_rectangle.x; i < g_rectangle.x + g_rectangle.height; i++ ){
-        for( int j = g_rectangle.y; j < g_rectangle.y + g_rectangle.width; j++ ){
-            keyPointMask.at < uchar > (i,j) = 1;
+    for( int i = g_rectangle.x; i < g_rectangle.x + g_rectangle.width; i++ ){
+        for( int j = g_rectangle.y; j < g_rectangle.y + g_rectangle.height; j++ ){
+            keyPointMask.at < uchar > (j,i) = 200;   //row first and the cols, reverse with x y
         }
     }
+    rectangle( keyPointMask, Point(g_rectangle.x, g_rectangle.y ), Point(g_rectangle.x + g_rectangle.width, g_rectangle.y + g_rectangle.height ), Scalar(255, 255, 255), 1, LINE_8, 0 );
+    DrawRectangle( keyPointMask, g_rectangle );
+    imshow("MASK", keyPointMask);
     Mat gray, preGray;
     cvtColor( srcImg, gray, COLOR_BGR2GRAY );
 
     // cout << "Befor get good features: " << gray.cols << " " << gray.rows << "mask:" << keyPointMask.cols << " "<<keyPointMask.rows << endl;
-    goodFeaturesToTrack( gray, keyPoints[0], 500, 0.01, 10, keyPointMask, 3, 3, 0, 0.04 );
+    goodFeaturesToTrack( gray, keyPoints[0], 500, 0.005, 10, keyPointMask, 3, 3, 0, 0.04 );
     cornerSubPix( gray, keyPoints[0], subPixWinSize, Size(-1,-1), termcrit );
     // cout << "After get good features" << endl;
     cout << "key points:";
@@ -155,7 +160,7 @@ int main( int argc, char* argv[] ){
 
     imshow( WINDOW_NAME, ImgShow ); //显示角点
 
-#if 0
+#if 1
     while(1){        //显示，按下 c 键继续
         if( waitKey(30) == 'c' ) break;
         continue;
@@ -274,5 +279,5 @@ void on_MouseHandle(int event, int x, int y, int flags, void* param){
 //double uniform(double a, double b);
 //-----------------------------------------------------------------------------------------------
 void DrawRectangle( cv::Mat& img, cv::Rect box ){
-    cv::rectangle(img,box.tl(),box.br(),cv::Scalar(g_rng.uniform(0, 255), g_rng.uniform(0,255), g_rng.uniform(0,255)));//随机颜色
+    cv::rectangle(img, box.tl(), box.br(), cv::Scalar(g_rng.uniform(0, 255), g_rng.uniform(0,255), g_rng.uniform(0,255)));//随机颜色
 }
