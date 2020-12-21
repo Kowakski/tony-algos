@@ -1,3 +1,32 @@
+编译方式:
+1)mkdir build; cd build
+2)cmake ..
+3)make
+note:
+1) find_package(OpenCV REQUIRED)  这里的 OpenCV 和 REQUIRED是固定的，会得到 OpenCV_INCLUDE_DIRS 和 OpenCV_LIBS
+2) 编译单个 demo 文件， 修改 CMakeLists.txt, 编译的时候带上参数 cmake .. -DMEXP=ON
+...
+if(EXP)
+    add_executable(exp ./src/lkdemo.cpp)
+    target_link_libraries(exp ${OpenCV_LIBS})
+else()
+    #message( STATUS "exp codes not open" )
+    add_executable(main ./src/main.cpp)
+    target_link_libraries(main ${OpenCV_LIBS})
+endif()
+...
+
+
+
+
+
+
+
+
+
+
+
+
 目标检测和跟踪
 一 读取图像，鼠标标记，然后开始跟踪
 1.读取图像，鼠标标记后开始跟踪并播放。

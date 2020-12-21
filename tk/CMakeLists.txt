@@ -31,8 +31,8 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Declare the executable target built from your sources
 if(EXP)
-    add_executable(exp ./src/lkdemo.cpp)
-    target_link_libraries(exp ${OpenCV_LIBS})
+    add_executable(kalman ./src/kalman_demo.cpp)
+    target_link_libraries(kalman ${OpenCV_LIBS})
 else()
     #message( STATUS "exp codes not open" )
     add_executable(main ./src/main.cpp)
