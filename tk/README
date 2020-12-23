@@ -18,8 +18,9 @@ endif()
 
 
 
-
-
+不知道是哪个头文件的时候到这个下面用 grep 搜索
+/usr/local/include
+/usr/local/include/opencv
 
 
 

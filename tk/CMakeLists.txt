@@ -26,16 +26,21 @@ message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
 # Add OpenCV headers location to your include paths
 include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories( inc )
+message("STATUS", OpenCV_INCLUDE_DIRS)
 
 #add_executable(main ./src/main.cpp)
-
+#aux_source_directory( ./src/video.cpp SRC_LIST )
+set( SRC_LIST ./src/video.cpp  ./src/framediff.cpp )
+#set( SRC_LIST ./src/video.cpp ./src/framediff.cpp )    #文件名加入到 SRC_LIST 里面
+message("STATUS" ${SRC_LIST})
 # Declare the executable target built from your sources
 if(EXP)
     add_executable(kalman ./src/kalman_demo.cpp)
     target_link_libraries(kalman ${OpenCV_LIBS})
 else()
     #message( STATUS "exp codes not open" )
-    add_executable(main ./src/main.cpp)
+    add_executable(main ./src/video.cpp src/framediff.cpp )
     target_link_libraries(main ${OpenCV_LIBS})
 endif()
 
