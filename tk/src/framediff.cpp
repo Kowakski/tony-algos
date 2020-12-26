@@ -1,5 +1,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/core.hpp>
+
+using namespace cv;
 #include "framediff.hpp"
 #include "debug.hpp"
 
@@ -9,7 +11,7 @@ FrameDiff::FrameDiff( uint spsize ){
     return;
 }
 
-void FrameDiff::FrameDiff( InputArray src1, OutputArray dst ){
+void FrameDiff::fd( InputArray src1, OutputArray dst ){
     Mat src1gray, src2gray;
     cvtColor( src1, src1gray, COLOR_BGR2GRAY, 1 );
 
@@ -20,7 +22,7 @@ void FrameDiff::FrameDiff( InputArray src1, OutputArray dst ){
     queue.push_back( src1gray );
 
     if( queue.size() < spsz ){
-        dst = noArray();
+        // dst.clear(); //不能用这个，只有新分配的内存可以用这个，会释放掉内存
         dbg("FrameDiff queue is short\n");
         return;
     }
