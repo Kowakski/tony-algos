@@ -10,6 +10,8 @@
 using namespace cv;
 using namespace std;
 
+#include "framediff.hpp"
+
 void show_help( void ){
     cout << "args err" <<endl;
     cout << "should use like this: "<<endl;
@@ -33,26 +35,21 @@ int main( int argc, char*argv[] ){
         return 0;
     }
 
-    frameCnt = 0;
-    cap >> frmdiff1;
-    resize( frmdiff1, frmdiff1, Size(WIDTH, HEIGHT), INTER_LINEAR );
+    FrameDiff fdiff(5);
 
     while( 1 ){
         cap >> frame;
         if( frame.empty() ){
             break;
         }
-        frameCnt++;
 
-        resize( frame, frame, Size(480,360), INTER_LINEAR );
-
-        if( frameCnt == 5 ){
-            frameCnt = 0;
-
+        resize( frame, frame, Size(WIDTH, HEIGHT), INTER_LINEAR );
+        fdiff.fd( frame, frmdiff2 );
+        if( !frmdiff2.empty() ){
+            printf("show result\n");
+            imshow( "VIDEO", frmdiff2 );
+            cout << frmdiff2 << endl;
         }
-
-        imshow( "VIDEO", frame );
-
         waitKey(10);
     }
 
