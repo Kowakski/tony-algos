@@ -37,7 +37,7 @@ void FrameDiff::fd( InputArray src1, OutputArray dst ){
 
     // subtract( src_, src1gray, dst );
     absdiff( src_, src1gray, dst );
-    GaussianBlur( dst, dst, Size(6,6), 0, 0,  BORDER_DEFAULT );
+    GaussianBlur( dst, dst, Size(3,3), 0, 0,  BORDER_DEFAULT );
     threshold( dst, dst, 20, 255, THRESH_BINARY );
     dilate( dst, dst, Mat(), Point(-1,-1), 4 );
     erode( dst, dst, Mat(), Point(-1,-1), 8 );

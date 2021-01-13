@@ -38,16 +38,16 @@ void rect_area( InputArray frm, Point& lu, Point& rb ){
             for( uint j = 0; j < src.cols; j++ ){
                 // cout << (int)src.at<uchar>(i,j) <<" ";
                 if( (int)src.at<uchar>(i,j) > 20 ){
-                    cout << "更新坐标 "<<i<<" "<<j<<" "<<endl;
+                    // cout << "更新坐标 "<<i<<" "<<j<<" "<<endl;
                     if( i > x2 ) x2 = i;
                     if( i < x1 ) x1 = i;
                     if( j > y2 ) y2 = j;
                     if( j < y1 ) y1 = j;
                 }
             }
-            cout << endl;
+            // cout << endl;
         }
-        cout << endl;
+        // cout << endl;
 
         lu.x = y1;
         lu.y = x1;
